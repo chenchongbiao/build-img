@@ -1,0 +1,144 @@
+import { echo_info, error, echo_success } from "std/env"
+import { ceil } from "std/math"
+import { parse } from "std/text"
+
+import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name } from "../utils/file.ab"
+import { umount_chroot, mount_chroot, run_command_in_chroot } from "./chroot.ab"
+import { extract_rootfs } from "./rootfs.ab"
+
+#[allow_absurd_cast]
+pub fun create_image(distro_name, distro_version, arch, base_type, device, image_size) {
+    let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
+    let rootfs_size = unsafe $sudo du --apparent-size -sm {rootfs_path} | cut -f1$ as Num
+    echo_info("current rootfs size: {rootfs_size} MiB")
+
+    let image_size_int = image_size as Num
+
+    let uefi_size = 300
+    let extra_rootfs_size = 500
+
+    let fixed_image_size = image_size_int
+    if image_size_int < rootfs_size {
+        fixed_image_size = rootfs_size + uefi_size + extra_rootfs_size
+    }
+
+    // 计算最终需要生成的镜像大小对齐至4MiB
+    // 再进行扩展，生成镜像的大小
+    let sdsize = fixed_image_size
+    if base_type == "minimal" {
+        // sdsize = unsafe $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
+        sdsize = ceil((fixed_image_size * 1.3 / 4) * 4)
+    } else {
+        // 安装桌面, 需要更大的空间
+        sdsize = ceil((fixed_image_size * 1.35 / 4) * 4)
+    }
+    echo_info("set image size: {sdsize} MIB")
+
+    let image_path = get_image_path(distro_name, distro_version, device, arch, base_type)
+    $dd if=/dev/zero of={image_path} bs=1M count={sdsize}$ failed {
+        error("dd image error")
+    }
+
+    let next = 1
+
+    let config_part = -1
+    if device == "rock-5b" {
+		config_part = next
+		next += 1
+	}
+
+    let uefi_part = next
+    next += 1
+    let root_part = next
+
+    echo_info("create partition table")
+    if config_part > 0 {
+        let config_size = 16
+        $(echo n; echo {config_part}; echo "32768"; echo +{config_size}M; echo 0700; \
+		echo c; echo config; \
+		echo n; echo {uefi_part}; echo "65536"; echo +{uefi_size}M; echo ef00; \
+		echo c; echo {uefi_part}; echo boot; \
+		echo n; echo {root_part}; echo \"\"; echo \"\"; echo "ef00"; \
+		echo c; echo {root_part}; echo rootfs; \
+		echo w; echo y) | gdisk {image_path}$ failed {
+            error("create partition table error")
+        }
+    } else {
+        $(echo n; echo {uefi_part}; echo \"\"; echo +{uefi_size}M;  echo ef00; \
+		echo c; echo efi; \
+		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\"; \
+		echo c; echo {root_part}; echo rootfs; \
+		echo w; echo y) | gdisk {image_path}$ failed {
+            error("create partition table error")
+        }
+    }
+
+    echo_info("losetup {image_path}")
+    let loop_device = $sudo losetup -Pf --show {image_path}$ failed {
+        error("losetup -Pf --show {image_path} error")
+    }
+
+    let device_config_path = get_device_config_path(arch, device)
+
+    unsafe {
+        // 设置这些文件系统的标签。dosfslabel 是用来设置vfat（FAT）文件系统的标签，e2label 是用来设置ext2/ext3/ext4文件系统的标签
+        $sudo mkfs.vfat -F32 {loop_device}p{uefi_part}$
+        $sudo dosfslabel {loop_device}p{uefi_part} efi$
+        $sudo mkfs.ext4 {loop_device}p{root_part}$
+        $sudo e2label {loop_device}p{root_part} rootfs$
+
+        if config_part > 0 {
+            $sudo mkfs.vfat -F32 {loop_device}p{config_part}$
+            $sudo e2label {loop_device}p{config_part} config$
+            $sudo fatlabel {loop_device}p{config_part} config$
+        }
+    }
+
+    umount_chroot()
+    echo_info("mount {loop_device}p{root_part} {get_tmp_path()}")
+    unsafe $sudo mount {loop_device}p{root_part} {get_tmp_path()}$
+    let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
+    let tar_file_path = get_tar_file_path(tar_file_name)
+    extract_rootfs(tar_file_path)
+    mount_chroot()
+
+    unsafe $sudo mkdir {get_tmp_path()}/boot/efi$
+    echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
+    unsafe $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
+    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi$
+    echo_info("copy grup to {get_tmp_path()}/boot")
+    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot$
+    echo_info("copy kernel to {get_tmp_path()}/boot")
+    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot$
+    unsafe $sudo mkdir {get_tmp_path()}/lib/modules$
+    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules$
+
+    echo_info("generate /etc/fstab")
+    let root_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{root_part}$
+    echo_info("root uuid: {root_part_uuid}")
+    unsafe $echo \"UUID={root_part_uuid} / ext4 defaults 0 1\" | sudo tee {get_tmp_path()}/etc/fstab > /dev/null$
+    if config_part > 0 {
+        let config_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{config_part}$
+        echo_info("config uuid: {config_part_uuid}")
+        unsafe $echo \"UUID={config_part_uuid} /config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+    }
+    let uefi_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
+    echo_info("efi uuid: {uefi_part_uuid}")
+    unsafe $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>&1 || true$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>&1 || true$
+
+    echo_info("set hostname")
+    unsafe $echo \"deepin-{arch}-{device}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
+    run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
+    run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
+    run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
+    run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
+
+    umount_chroot()
+    silent unsafe $sudo e2fsck -p -f {loop_device}p{root_part}$
+    silent unsafe $sudo resize2fs {loop_device}p{root_part}$
+    unsafe $sudo losetup -D {loop_device}$
+
+    echo_success("output {image_path} success")
+}

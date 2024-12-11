@@ -1,0 +1,54 @@
+import { dir_exist, create_dir } from "std/fs"
+
+let pwd = unsafe $pwd$
+
+pub fun get_cache_path(): Text {
+    return "{pwd}/cache"
+}
+
+pub fun get_output_path(): Text {
+    return "{pwd}/output"
+}
+
+pub fun get_rootfs_name(distro_name, distro_version, arch, base_type): Text {
+    return "{distro_name}-{distro_version}-{arch}-{base_type}"
+}
+
+pub fun get_rootfs_path(distro_name, distro_version, arch, base_type): Text{
+    return "{get_cache_path()}/rootfs/{get_rootfs_name(distro_name, distro_version, arch, base_type)}"
+}
+
+pub fun get_rootfs_cache_path(): Text {
+    return "{get_cache_path()}/rootfs"
+}
+
+pub fun get_tmp_path(): Text {
+    return "{get_cache_path()}/tmp"
+}
+
+pub fun get_tar_file_name(distro_name, distro_version, arch, base_type): Text {
+    return "{get_rootfs_name(distro_name, distro_version, arch, base_type)}.tar.gz"
+}
+
+pub fun get_tar_file_path(tar_file_name): Text {
+    return "{get_rootfs_cache_path()}/{tar_file_name}"
+}
+
+pub fun get_image_name(distro_name, distro_version, device, arch, base_type): Text {
+    return "{distro_name}-{distro_version}-{device}-{arch}-{base_type}.img"
+}
+
+pub fun get_image_path(distro_name, distro_version, device, arch, base_type): Text {
+    return "{get_output_path()}/{get_image_name(distro_name, distro_version, device, arch, base_type)}"
+}
+
+pub fun get_device_config_path(arch, device): Text {
+    return "{pwd}/config/{arch}/{device}"
+}
+
+pub fun check_dotfiles() {
+    let dir_list = [get_output_path(), get_cache_path(),get_tmp_path()]
+    loop dir in dir_list {
+        if not dir_exist(dir): create_dir(dir)
+    }
+}

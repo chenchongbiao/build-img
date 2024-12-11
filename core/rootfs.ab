@@ -1,0 +1,62 @@
+import { file_exist, dir_exist, create_dir } from "std/fs"
+import { join } from "std/text"
+import { echo_info, echo_success, error } from "std/env"
+
+import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_tmp_path } from "../utils/file.ab"
+
+// 创建 rootfs 缓存
+pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device) {
+    let mininal_packages = "apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
+    let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr,linux-firmware"
+    let desktop_packages = ""
+    let include_packages = ""
+
+    let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
+
+    if {
+        base_type == "minimal" {
+            include_packages = join([mininal_packages, board_packages], ",")
+        }
+        base_type == "desktop" {
+            include_packages = join([mininal_packages, board_packages, desktop_packages], ",")
+        }
+    }
+
+    if not dir_exist(rootfs_path) {
+        echo_info("create {rootfs_path}")
+        create_dir(rootfs_path)
+    }
+
+    unsafe $sudo mmdebstrap \
+        --hook-dir=/usr/share/mmdebstrap/hooks/merged-usr \
+        --include={include_packages} \
+        --components={components} \
+        --variant=minbase \
+        --architectures={arch} \
+        {distro_version} \
+        {rootfs_path} \
+        \"{sources}\"$
+}
+
+pub fun create_rootfs_tar_file(distro_name, distro_version, arch, base_type) {
+    let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
+    let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
+    let tar_file_path = get_tar_file_path(tar_file_name)
+
+    if not file_exist(tar_file_path) {
+        echo_info("create {tar_file_name}")
+        $cd {get_rootfs_cache_path()} && sudo tar zfcp {tar_file_name} --xattrs  --exclude='./dev/*' --exclude='./proc/*' \
+	    --exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' -C {rootfs_path} .$ failed {
+            error("create {tar_file_name} error")
+        }
+        echo_success("create {tar_file_name} success")
+    } else {
+        echo_info("{tar_file_name} is exists")
+    }
+}
+
+pub fun extract_rootfs(tar_file_path) {
+    // 解压前清除，目录下的内容
+    unsafe $sudo rm -rf {get_tmp_path()}/*$
+    unsafe $sudo tar -zxpf {tar_file_path} --xattrs -C {get_tmp_path()}$
+}

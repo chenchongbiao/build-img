@@ -1,0 +1,54 @@
+import { build_cmd } from "./cli/build.ab"
+import { check_dotfiles } from "./utils/file.ab"
+
+main (args) {
+    let distro_name=""
+    let distro_version=""
+    let components=""
+    let arch=""
+    let sources=""
+    let device=""
+    let base_type="minimal"
+    let image_size="0"
+
+    let command = args[1]
+    let build_tag = args[2] // board rootimg
+
+    loop i, arg in args {
+        if {
+            arg == "--name" or arg == "-n" {
+                distro_name = args[i+1]
+            }
+            arg == "--distro" or arg == "-d" {
+                distro_version = args[i+1]
+            }
+            arg == "--components" or arg == "-c"{
+                components = args[i+1]
+            }
+            arg == "--arch" or arg == "-a" {
+                arch = args[i+1]
+            }
+            arg == "--sources" or arg == "-s" {
+                sources = args[i+1]
+            }
+            arg == "--base-type" {
+                base_type = args[i+1]
+            }
+            arg == "--device" {
+                device = args[i+1]
+            }
+            arg == "--image-size" {
+                image_size = args[i+1]
+            }
+        }
+    }
+
+    // 检查配置目录
+    check_dotfiles()
+
+    if {
+        command == "build" {
+            build_cmd(build_tag, distro_name, distro_version, components, arch, sources, base_type, device, image_size)
+        }
+    }
+}

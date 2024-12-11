@@ -1,0 +1,31 @@
+import { get_tmp_path } from "../utils/file.ab"
+
+pub fun mount_chroot() {
+    unsafe {
+        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {get_tmp_path()}/tmp$
+        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {get_tmp_path()}/var/tmp$
+        $sudo mount -t proc chproc {get_tmp_path()}/proc$
+        $sudo mount -t sysfs chsys {get_tmp_path()}/sys$
+        $sudo mount --bind /dev {get_tmp_path()}/dev$
+    }
+}
+
+pub fun umount_chroot() {
+    loop {
+        let res = unsafe $grep -E "{get_tmp_path()}/(dev|proc|sys|tmp|var/tmp)" /proc/mounts$
+        if res == "": break
+
+        unsafe {
+            $sudo umount --recursive {get_tmp_path()}/dev$
+            $sudo umount {get_tmp_path()}/proc$
+            $sudo umount {get_tmp_path()}/sys$
+            $sudo umount {get_tmp_path()}/tmp$
+            $sudo umount {get_tmp_path()}/var/tmp$
+            $sudo umount -l {get_tmp_path()}$
+        }
+    }
+}
+
+pub fun run_command_in_chroot(rootfs_path, command) {
+    unsafe $sudo chroot {rootfs_path} /usr/bin/env bash -e -o pipefail -c \"{command}\"$
+}
