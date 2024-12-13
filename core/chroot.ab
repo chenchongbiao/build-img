@@ -27,5 +27,6 @@ pub fun umount_chroot() {
 }
 
 pub fun run_command_in_chroot(rootfs_path, command) {
-    unsafe $sudo chroot {rootfs_path} /usr/bin/env bash -e -o pipefail -c \"{command}\"$
+    unsafe $export DEBIAN_FRONTEND=noninteractive && \
+    sudo chroot {rootfs_path} /usr/bin/env bash -e -o pipefail -c \"{command}\"$
 }

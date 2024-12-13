@@ -1,2 +1,9 @@
 linux-firmware_1.202.7_all.deb 与radxa-firmware提供的/lib/firmware/rtl8852bu_config和/lib/firmware/rtl8852bu_fw冲突，删除了，deepin自带的，重新压包
 u-boot-menu_4.2.2_all 不要安装 deepin 自带的 u-boot-menu 安装 radxa 提供的
+瑞莎提供的 radxa-system-config-common_0.6.11_all.deb 提供了 /usr/share/applications/mimeapps.list 与 deepin 携带的冲突，将该文件删除重新打包
+使用rock 官方提供的 dkms 提供了/etc/kernel/install.d/dkms 需要对比下看给deepin提交patch
+
+dpkg-reconfigure keyboard-configuration 重新配置键盘布局
+
+不知道为啥安装了 linux-headers-6.1.68-2-stable 卸载
+更新 u-boot-update

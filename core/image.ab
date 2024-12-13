@@ -53,21 +53,26 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
 
     echo_info("create partition table")
     if config_part > 0 {
+        // 这里给 rock5b 单独需要设置 config 分区，另外的设置根分区为 8300 的通用文件系统时启动后也无法正确挂载。这里设置 8305 Linux ARM64 root
         let config_size = 16
         $(echo n; echo {config_part}; echo "32768"; echo +{config_size}M; echo 0700; \
 		echo c; echo config; \
 		echo n; echo {uefi_part}; echo "65536"; echo +{uefi_size}M; echo ef00; \
-		echo c; echo {uefi_part}; echo boot; \
-		echo n; echo {root_part}; echo \"\"; echo \"\"; echo "ef00"; \
-		echo c; echo {root_part}; echo rootfs; \
+		echo c; echo {uefi_part}; echo efi; \
+		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\";\
+		echo c; echo {root_part}; echo root; \
 		echo w; echo y) | gdisk {image_path}$ failed {
             error("create partition table error")
         }
+
+        // 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
+        // unsafe $sudo parted {image_path} set {uefi_part} legacy_boot on $
+        unsafe $sudo parted {image_path} set {root_part} legacy_boot on $
     } else {
         $(echo n; echo {uefi_part}; echo \"\"; echo +{uefi_size}M;  echo ef00; \
 		echo c; echo efi; \
 		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\"; \
-		echo c; echo {root_part}; echo rootfs; \
+		echo c; echo {root_part}; echo root; \
 		echo w; echo y) | gdisk {image_path}$ failed {
             error("create partition table error")
         }
@@ -85,7 +90,7 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
         $sudo mkfs.vfat -F32 {loop_device}p{uefi_part}$
         $sudo dosfslabel {loop_device}p{uefi_part} efi$
         $sudo mkfs.ext4 {loop_device}p{root_part}$
-        $sudo e2label {loop_device}p{root_part} rootfs$
+        $sudo e2label {loop_device}p{root_part} root$
 
         if config_part > 0 {
             $sudo mkfs.vfat -F32 {loop_device}p{config_part}$
@@ -105,18 +110,60 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
     unsafe $sudo mkdir {get_tmp_path()}/boot/efi$
     echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
     unsafe $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
-    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi$
+    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
+
     echo_info("copy grup to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot$
+    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
+
     echo_info("copy kernel to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot$
+    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
     unsafe $sudo mkdir {get_tmp_path()}/lib/modules$
-    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules$
+    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
+
+    echo_info("copy sources.list.d to {get_tmp_path()}/etc/apt/sources.list.d")
+    unsafe $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
+
+    echo_info("copy extra packages to {get_tmp_path()}/tmp")
+    unsafe $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp || true$
+    echo_info("installing extra packages from {get_tmp_path()}/tmp")
+    run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb")
+
+    if device == "rock-5b" {
+        // 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
+        if true {
+            unsafe $sudo mkdir {get_tmp_path()}/config$
+
+            // rock 5b 用 github 做 apt 仓库，需要代理
+            unsafe $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+            unsafe $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+            run_command_in_chroot(get_tmp_path(), "apt update")
+            // debian dkms 加了 /etc/kernel 下的内容
+            unsafe $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
+            run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
+            run_command_in_chroot(get_tmp_path(), "apt install -y \\
+                radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
+                rfkill \\
+                u-boot-tools efibootmgr systemd-boot apt-listchanges \\
+                pipewire-audio avahi-daemon")
+            run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
+            run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
+
+            unsafe $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
+            echo_info("copy config to {get_tmp_path()}/config")
+            unsafe $sudo cp -r {device_config_path}/config/* {get_tmp_path()}/config$
+            unsafe $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
+        }
+
+        run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
+        // rock5b 把一些内核模块用xz压缩了
+        // run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
+
+    }
 
     echo_info("generate /etc/fstab")
     let root_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{root_part}$
     echo_info("root uuid: {root_part_uuid}")
-    unsafe $echo \"UUID={root_part_uuid} / ext4 defaults 0 1\" | sudo tee {get_tmp_path()}/etc/fstab > /dev/null$
+    unsafe $echo \"UUID={root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1\" | sudo tee {get_tmp_path()}/etc/fstab > /dev/null$
     if config_part > 0 {
         let config_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{config_part}$
         echo_info("config uuid: {config_part_uuid}")
@@ -125,19 +172,34 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
     let uefi_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
     echo_info("efi uuid: {uefi_part_uuid}")
     unsafe $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>&1 || true$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>&1 || true$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>/dev/null$
+
+    // rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
+    run_command_in_chroot(get_tmp_path(), "sed -i 's/UUID=[0-9a-fA-F]\\\{8\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{12\\}/UUID={root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null")
+
+    // 添加自动扩容，配合 /etc/fstab x-systemd.growfs
+    unsafe $sudo mkdir -p {get_tmp_path()}/etc/repart.d$
+    unsafe $echo \"[Partition]\" | sudo tee {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
+    unsafe $echo \"Type=linux-generic\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
+    unsafe $echo \"GrowFileSystem=true\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
 
     echo_info("set hostname")
     unsafe $echo \"deepin-{arch}-{device}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
-    run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
-    run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
+
+    echo_info("update-initramfs -u")
+    run_command_in_chroot(get_tmp_path(), "update-initramfs -u")
+
+    if device != "rock-5b" {
+        run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
+        run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
+        run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
+    }
     run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
-    run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
 
     umount_chroot()
     silent unsafe $sudo e2fsck -p -f {loop_device}p{root_part}$
-    silent unsafe $sudo resize2fs {loop_device}p{root_part}$
+    silent unsafe $sudo resize2fs -M {loop_device}p{root_part}$
     unsafe $sudo losetup -D {loop_device}$
 
     echo_success("output {image_path} success")

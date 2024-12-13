@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Written in [Amber](https://amber-lang.com/)
 # version: 0.3.5-alpha
-# date: 2024-12-11 11:20:03
+# date: 2024-12-25 14:20:14
 dir_exist__0_v0() {
     local path=$1
     [ -d "${path}" ];
@@ -182,8 +182,9 @@ create_rootfs_cache__122_v0() {
     local base_type=$6
     local device=$7
     local mininal_packages="apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
-    local board_packages="dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr,linux-firmware"
-    local desktop_packages=""
+    local board_packages="dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr"
+    # linux-firmware 被升级后无法正常安装，先移除
+    local desktop_packages="firefox"
     local include_packages=""
     get_rootfs_path__108_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
     __AF_get_rootfs_path108_v0__14_23="${__AF_get_rootfs_path108_v0}";
@@ -253,7 +254,7 @@ fi
 run_command_in_chroot__130_v0() {
     local rootfs_path=$1
     local command=$2
-    sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
+    export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
     __AS=$?
 }
 __AMBER_VAL_2=$(pwd);
@@ -382,7 +383,7 @@ done
 run_command_in_chroot__170_v0() {
     local rootfs_path=$1
     local command=$2
-    sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
+    export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
     __AS=$?
 }
 # 创建 rootfs 缓存
@@ -461,37 +462,42 @@ fi
     __AF_echo_info91_v0__54_5="$__AF_echo_info91_v0";
     echo "$__AF_echo_info91_v0__54_5" > /dev/null 2>&1
     if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+        # 这里给 rock5b 单独需要设置 config 分区，另外的设置根分区为 8300 的通用文件系统时启动后也无法正确挂载。这里设置 8305 Linux ARM64 root
         local config_size=16
-        (echo n; echo ${config_part}; echo "32768"; echo +${config_size}M; echo 0700; 		echo c; echo config; 		echo n; echo ${uefi_part}; echo "65536"; echo +${uefi_size}M; echo ef00; 		echo c; echo ${uefi_part}; echo boot; 		echo n; echo ${root_part}; echo ""; echo ""; echo "ef00"; 		echo c; echo ${root_part}; echo rootfs; 		echo w; echo y) | gdisk ${image_path};
+        (echo n; echo ${config_part}; echo "32768"; echo +${config_size}M; echo 0700; 		echo c; echo config; 		echo n; echo ${uefi_part}; echo "65536"; echo +${uefi_size}M; echo ef00; 		echo c; echo ${uefi_part}; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo 8300;		echo c; echo ${root_part}; echo root; 		echo w; echo y) | gdisk ${image_path};
         __AS=$?;
 if [ $__AS != 0 ]; then
             error__94_v0 "create partition table error" 1;
-            __AF_error94_v0__64_13="$__AF_error94_v0";
-            echo "$__AF_error94_v0__64_13" > /dev/null 2>&1
+            __AF_error94_v0__65_13="$__AF_error94_v0";
+            echo "$__AF_error94_v0__65_13" > /dev/null 2>&1
 fi
+        # 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
+        # unsafe $sudo parted {image_path} set {uefi_part} legacy_boot on $
+        sudo parted ${image_path} set ${root_part} legacy_boot on ;
+        __AS=$?
 else
-        (echo n; echo ${uefi_part}; echo ""; echo +${uefi_size}M;  echo ef00; 		echo c; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo ""; 		echo c; echo ${root_part}; echo rootfs; 		echo w; echo y) | gdisk ${image_path};
+        (echo n; echo ${uefi_part}; echo ""; echo +${uefi_size}M;  echo ef00; 		echo c; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo ""; 		echo c; echo ${root_part}; echo root; 		echo w; echo y) | gdisk ${image_path};
         __AS=$?;
 if [ $__AS != 0 ]; then
             error__94_v0 "create partition table error" 1;
-            __AF_error94_v0__72_13="$__AF_error94_v0";
-            echo "$__AF_error94_v0__72_13" > /dev/null 2>&1
+            __AF_error94_v0__77_13="$__AF_error94_v0";
+            echo "$__AF_error94_v0__77_13" > /dev/null 2>&1
 fi
 fi
     echo_info__91_v0 "losetup ${image_path}";
-    __AF_echo_info91_v0__76_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__76_5" > /dev/null 2>&1
+    __AF_echo_info91_v0__81_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__81_5" > /dev/null 2>&1
     __AMBER_VAL_6=$(sudo losetup -Pf --show ${image_path});
     __AS=$?;
 if [ $__AS != 0 ]; then
         error__94_v0 "losetup -Pf --show ${image_path} error" 1;
-        __AF_error94_v0__78_9="$__AF_error94_v0";
-        echo "$__AF_error94_v0__78_9" > /dev/null 2>&1
+        __AF_error94_v0__83_9="$__AF_error94_v0";
+        echo "$__AF_error94_v0__83_9" > /dev/null 2>&1
 fi;
     local loop_device="${__AMBER_VAL_6}"
     get_device_config_path__115_v0 "${arch}" "${device}";
-    __AF_get_device_config_path115_v0__81_30="${__AF_get_device_config_path115_v0}";
-    local device_config_path="${__AF_get_device_config_path115_v0__81_30}"
+    __AF_get_device_config_path115_v0__86_30="${__AF_get_device_config_path115_v0}";
+    local device_config_path="${__AF_get_device_config_path115_v0__86_30}"
             # 设置这些文件系统的标签。dosfslabel 是用来设置vfat（FAT）文件系统的标签，e2label 是用来设置ext2/ext3/ext4文件系统的标签
         sudo mkfs.vfat -F32 ${loop_device}p${uefi_part};
         __AS=$?
@@ -499,7 +505,7 @@ fi;
         __AS=$?
         sudo mkfs.ext4 ${loop_device}p${root_part};
         __AS=$?
-        sudo e2label ${loop_device}p${root_part} rootfs;
+        sudo e2label ${loop_device}p${root_part} root;
         __AS=$?
         if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
             sudo mkfs.vfat -F32 ${loop_device}p${config_part};
@@ -510,154 +516,291 @@ fi;
             __AS=$?
 fi
     umount_chroot__169_v0 ;
-    __AF_umount_chroot169_v0__97_5="$__AF_umount_chroot169_v0";
-    echo "$__AF_umount_chroot169_v0__97_5" > /dev/null 2>&1
+    __AF_umount_chroot169_v0__102_5="$__AF_umount_chroot169_v0";
+    echo "$__AF_umount_chroot169_v0__102_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__98_49="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__98_49}";
-    __AF_echo_info91_v0__98_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__98_5" > /dev/null 2>&1
+    __AF_get_tmp_path110_v0__103_49="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__103_49}";
+    __AF_echo_info91_v0__103_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__103_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__99_51="${__AF_get_tmp_path110_v0}";
-    sudo mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__99_51};
+    __AF_get_tmp_path110_v0__104_51="${__AF_get_tmp_path110_v0}";
+    sudo mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__104_51};
     __AS=$?
     get_tar_file_name__111_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_tar_file_name111_v0__100_25="${__AF_get_tar_file_name111_v0}";
-    local tar_file_name="${__AF_get_tar_file_name111_v0__100_25}"
+    __AF_get_tar_file_name111_v0__105_25="${__AF_get_tar_file_name111_v0}";
+    local tar_file_name="${__AF_get_tar_file_name111_v0__105_25}"
     get_tar_file_path__112_v0 "${tar_file_name}";
-    __AF_get_tar_file_path112_v0__101_25="${__AF_get_tar_file_path112_v0}";
-    local tar_file_path="${__AF_get_tar_file_path112_v0__101_25}"
+    __AF_get_tar_file_path112_v0__106_25="${__AF_get_tar_file_path112_v0}";
+    local tar_file_path="${__AF_get_tar_file_path112_v0__106_25}"
     extract_rootfs__188_v0 "${tar_file_path}";
-    __AF_extract_rootfs188_v0__102_5="$__AF_extract_rootfs188_v0";
-    echo "$__AF_extract_rootfs188_v0__102_5" > /dev/null 2>&1
+    __AF_extract_rootfs188_v0__107_5="$__AF_extract_rootfs188_v0";
+    echo "$__AF_extract_rootfs188_v0__107_5" > /dev/null 2>&1
     mount_chroot__168_v0 ;
-    __AF_mount_chroot168_v0__103_5="$__AF_mount_chroot168_v0";
-    echo "$__AF_mount_chroot168_v0__103_5" > /dev/null 2>&1
+    __AF_mount_chroot168_v0__108_5="$__AF_mount_chroot168_v0";
+    echo "$__AF_mount_chroot168_v0__108_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__105_25="${__AF_get_tmp_path110_v0}";
-    sudo mkdir ${__AF_get_tmp_path110_v0__105_25}/boot/efi;
+    __AF_get_tmp_path110_v0__110_25="${__AF_get_tmp_path110_v0}";
+    sudo mkdir ${__AF_get_tmp_path110_v0__110_25}/boot/efi;
     __AS=$?
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__106_49="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__106_49}/boot/efi";
-    __AF_echo_info91_v0__106_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__106_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__107_51="${__AF_get_tmp_path110_v0}";
-    sudo mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__107_51}/boot/efi;
-    __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__108_50="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/EFI ${__AF_get_tmp_path110_v0__108_50}/boot/efi;
-    __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__109_30="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy grup to ${__AF_get_tmp_path110_v0__109_30}/boot";
-    __AF_echo_info91_v0__109_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__109_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__110_51="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/grub ${__AF_get_tmp_path110_v0__110_51}/boot;
-    __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__111_32="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy kernel to ${__AF_get_tmp_path110_v0__111_32}/boot";
+    __AF_get_tmp_path110_v0__111_49="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__111_49}/boot/efi";
     __AF_echo_info91_v0__111_5="$__AF_echo_info91_v0";
     echo "$__AF_echo_info91_v0__111_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__112_55="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/kernel/* ${__AF_get_tmp_path110_v0__112_55}/boot;
+    __AF_get_tmp_path110_v0__112_51="${__AF_get_tmp_path110_v0}";
+    sudo mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__112_51}/boot/efi;
     __AS=$?
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__113_25="${__AF_get_tmp_path110_v0}";
-    sudo mkdir ${__AF_get_tmp_path110_v0__113_25}/lib/modules;
+    __AF_get_tmp_path110_v0__113_50="${__AF_get_tmp_path110_v0}";
+    sudo cp -r ${device_config_path}/EFI ${__AF_get_tmp_path110_v0__113_50}/boot/efi 2>/dev/null;
     __AS=$?
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__114_56="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/modules/* ${__AF_get_tmp_path110_v0__114_56}/lib/modules;
+    __AF_get_tmp_path110_v0__115_30="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "copy grup to ${__AF_get_tmp_path110_v0__115_30}/boot";
+    __AF_echo_info91_v0__115_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__115_5" > /dev/null 2>&1
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__116_51="${__AF_get_tmp_path110_v0}";
+    sudo cp -r ${device_config_path}/grub ${__AF_get_tmp_path110_v0__116_51}/boot 2>/dev/null;
     __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__118_32="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "copy kernel to ${__AF_get_tmp_path110_v0__118_32}/boot";
+    __AF_echo_info91_v0__118_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__118_5" > /dev/null 2>&1
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__119_55="${__AF_get_tmp_path110_v0}";
+    sudo cp -r ${device_config_path}/kernel/* ${__AF_get_tmp_path110_v0__119_55}/boot 2>/dev/null;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__120_25="${__AF_get_tmp_path110_v0}";
+    sudo mkdir ${__AF_get_tmp_path110_v0__120_25}/lib/modules;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__121_56="${__AF_get_tmp_path110_v0}";
+    sudo cp -r ${device_config_path}/modules/* ${__AF_get_tmp_path110_v0__121_56}/lib/modules 2>/dev/null;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__123_40="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "copy sources.list.d to ${__AF_get_tmp_path110_v0__123_40}/etc/apt/sources.list.d";
+    __AF_echo_info91_v0__123_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__123_5" > /dev/null 2>&1
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__124_63="${__AF_get_tmp_path110_v0}";
+    sudo cp -r ${device_config_path}/sources.list.d/* ${__AF_get_tmp_path110_v0__124_63}/etc/apt/sources.list.d 2>/dev/null;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__126_40="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "copy extra packages to ${__AF_get_tmp_path110_v0__126_40}/tmp";
+    __AF_echo_info91_v0__126_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__126_5" > /dev/null 2>&1
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__127_58="${__AF_get_tmp_path110_v0}";
+    cp -r ${device_config_path}/extra-packages/* ${__AF_get_tmp_path110_v0__127_58}/tmp || true;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__128_48="${__AF_get_tmp_path110_v0}";
+    echo_info__91_v0 "installing extra packages from ${__AF_get_tmp_path110_v0__128_48}/tmp";
+    __AF_echo_info91_v0__128_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__128_5" > /dev/null 2>&1
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__129_27="${__AF_get_tmp_path110_v0}";
+    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__129_27}" "cd /tmp && apt install -y ./*deb";
+    __AF_run_command_in_chroot170_v0__129_5="$__AF_run_command_in_chroot170_v0";
+    echo "$__AF_run_command_in_chroot170_v0__129_5" > /dev/null 2>&1
+    if [ $([ "_${device}" != "_rock-5b" ]; echo $?) != 0 ]; then
+        # 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
+        if [ 1 != 0 ]; then
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__134_33="${__AF_get_tmp_path110_v0}";
+            sudo mkdir ${__AF_get_tmp_path110_v0__134_33}/config;
+            __AS=$?
+            # rock 5b 用 github 做 apt 仓库，需要代理
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__137_92="${__AF_get_tmp_path110_v0}";
+            echo 'Acquire::https::Proxy "http://10.20.42.187:7890";' | sudo tee ${__AF_get_tmp_path110_v0__137_92}/etc/apt/apt.conf > /dev/null;
+            __AS=$?
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__138_94="${__AF_get_tmp_path110_v0}";
+            echo 'Acquire::http::Proxy "http://10.20.42.187:7890";' | sudo tee -a ${__AF_get_tmp_path110_v0__138_94}/etc/apt/apt.conf > /dev/null;
+            __AS=$?
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__139_35="${__AF_get_tmp_path110_v0}";
+            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__139_35}" "apt update";
+            __AF_run_command_in_chroot170_v0__139_13="$__AF_run_command_in_chroot170_v0";
+            echo "$__AF_run_command_in_chroot170_v0__139_13" > /dev/null 2>&1
+            # debian dkms 加了 /etc/kernel 下的内容
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__141_33="${__AF_get_tmp_path110_v0}";
+            curl -L -o ${__AF_get_tmp_path110_v0__141_33}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb;
+            __AS=$?
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__142_35="${__AF_get_tmp_path110_v0}";
+            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__142_35}" "apt reinstall -y --allow-downgrades /tmp/dkms.deb";
+            __AF_run_command_in_chroot170_v0__142_13="$__AF_run_command_in_chroot170_v0";
+            echo "$__AF_run_command_in_chroot170_v0__142_13" > /dev/null 2>&1
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__143_35="${__AF_get_tmp_path110_v0}";
+            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__143_35}" "apt install -y \\
+                radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
+                rfkill \\
+                u-boot-tools efibootmgr systemd-boot apt-listchanges \\
+                pipewire-audio avahi-daemon";
+            __AF_run_command_in_chroot170_v0__143_13="$__AF_run_command_in_chroot170_v0";
+            echo "$__AF_run_command_in_chroot170_v0__143_13" > /dev/null 2>&1
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__148_35="${__AF_get_tmp_path110_v0}";
+            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__148_35}" "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b";
+            __AF_run_command_in_chroot170_v0__148_13="$__AF_run_command_in_chroot170_v0";
+            echo "$__AF_run_command_in_chroot170_v0__148_13" > /dev/null 2>&1
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__149_35="${__AF_get_tmp_path110_v0}";
+            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__149_35}" "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b";
+            __AF_run_command_in_chroot170_v0__149_13="$__AF_run_command_in_chroot170_v0";
+            echo "$__AF_run_command_in_chroot170_v0__149_13" > /dev/null 2>&1
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__151_61="${__AF_get_tmp_path110_v0}";
+            sudo mount ${loop_device}p${config_part} ${__AF_get_tmp_path110_v0__151_61}/config;
+            __AS=$?
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__152_40="${__AF_get_tmp_path110_v0}";
+            echo_info__91_v0 "copy config to ${__AF_get_tmp_path110_v0__152_40}/config";
+            __AF_echo_info91_v0__152_13="$__AF_echo_info91_v0";
+            echo "$__AF_echo_info91_v0__152_13" > /dev/null 2>&1
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__153_63="${__AF_get_tmp_path110_v0}";
+            sudo cp -r ${device_config_path}/config/* ${__AF_get_tmp_path110_v0__153_63}/config;
+            __AS=$?
+            get_tmp_path__110_v0 ;
+            __AF_get_tmp_path110_v0__154_30="${__AF_get_tmp_path110_v0}";
+            sudo rm ${__AF_get_tmp_path110_v0__154_30}/etc/apt/apt.conf;
+            __AS=$?
+fi
+        get_tmp_path__110_v0 ;
+        __AF_get_tmp_path110_v0__157_31="${__AF_get_tmp_path110_v0}";
+        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__157_31}" "cd /usr/lib/u-boot/${device} && ./setup.sh update_bootloader ${loop_device} rk3588";
+        __AF_run_command_in_chroot170_v0__157_9="$__AF_run_command_in_chroot170_v0";
+        echo "$__AF_run_command_in_chroot170_v0__157_9" > /dev/null 2>&1
+        # rock5b 把一些内核模块用xz压缩了
+        # run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
+fi
     echo_info__91_v0 "generate /etc/fstab";
-    __AF_echo_info91_v0__116_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__116_5" > /dev/null 2>&1
+    __AF_echo_info91_v0__163_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__163_5" > /dev/null 2>&1
     __AMBER_VAL_7=$(sudo blkid -s UUID -o value ${loop_device}p${root_part});
     __AS=$?;
     local root_part_uuid="${__AMBER_VAL_7}"
     echo_info__91_v0 "root uuid: ${root_part_uuid}";
-    __AF_echo_info91_v0__118_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__118_5" > /dev/null 2>&1
+    __AF_echo_info91_v0__165_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__165_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__119_76="${__AF_get_tmp_path110_v0}";
-    echo "UUID=${root_part_uuid} / ext4 defaults 0 1" | sudo tee ${__AF_get_tmp_path110_v0__119_76}/etc/fstab > /dev/null;
+    __AF_get_tmp_path110_v0__166_114="${__AF_get_tmp_path110_v0}";
+    echo "UUID=${root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1" | sudo tee ${__AF_get_tmp_path110_v0__166_114}/etc/fstab > /dev/null;
     __AS=$?
     if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
         __AMBER_VAL_8=$(sudo blkid -s UUID -o value ${loop_device}p${config_part});
         __AS=$?;
         local config_part_uuid="${__AMBER_VAL_8}"
         echo_info__91_v0 "config uuid: ${config_part_uuid}";
-        __AF_echo_info91_v0__122_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__122_9" > /dev/null 2>&1
+        __AF_echo_info91_v0__169_9="$__AF_echo_info91_v0";
+        echo "$__AF_echo_info91_v0__169_9" > /dev/null 2>&1
         get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__123_111="${__AF_get_tmp_path110_v0}";
-        echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__123_111}/etc/fstab > /dev/null;
+        __AF_get_tmp_path110_v0__170_111="${__AF_get_tmp_path110_v0}";
+        echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__170_111}/etc/fstab > /dev/null;
         __AS=$?
 fi
     __AMBER_VAL_9=$(sudo blkid -s UUID -o value ${loop_device}p${uefi_part});
     __AS=$?;
     local uefi_part_uuid="${__AMBER_VAL_9}"
     echo_info__91_v0 "efi uuid: ${uefi_part_uuid}";
-    __AF_echo_info91_v0__126_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__126_5" > /dev/null 2>&1
+    __AF_echo_info91_v0__173_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__173_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__127_107="${__AF_get_tmp_path110_v0}";
-    echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__127_107}/etc/fstab > /dev/null;
+    __AF_get_tmp_path110_v0__174_107="${__AF_get_tmp_path110_v0}";
+    echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__174_107}/etc/fstab > /dev/null;
     __AS=$?
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__128_61="${__AF_get_tmp_path110_v0}";
-    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__128_61}/boot/grub/grub.cfg 2>&1 || true;
+    __AF_get_tmp_path110_v0__175_61="${__AF_get_tmp_path110_v0}";
+    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__175_61}/boot/grub/grub.cfg 2>/dev/null;
     __AS=$?
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__129_61="${__AF_get_tmp_path110_v0}";
-    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__129_61}/boot/efi/EFI/boot/grub.cfg 2>&1 || true;
+    __AF_get_tmp_path110_v0__176_61="${__AF_get_tmp_path110_v0}";
+    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__176_61}/boot/efi/EFI/boot/grub.cfg 2>/dev/null;
+    __AS=$?
+    # rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__179_27="${__AF_get_tmp_path110_v0}";
+    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__179_27}" "sed -i 's/UUID=[0-9a-fA-F]\\{8\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{12\\}/UUID=${root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null";
+    __AF_run_command_in_chroot170_v0__179_5="$__AF_run_command_in_chroot170_v0";
+    echo "$__AF_run_command_in_chroot170_v0__179_5" > /dev/null 2>&1
+    # 添加自动扩容，配合 /etc/fstab x-systemd.growfs
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__182_28="${__AF_get_tmp_path110_v0}";
+    sudo mkdir -p ${__AF_get_tmp_path110_v0__182_28}/etc/repart.d;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__183_46="${__AF_get_tmp_path110_v0}";
+    echo "[Partition]" | sudo tee ${__AF_get_tmp_path110_v0__183_46}/etc/repart.d/growroot.conf > /dev/null;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__184_56="${__AF_get_tmp_path110_v0}";
+    echo "Type=linux-generic" | sudo tee -a ${__AF_get_tmp_path110_v0__184_56}/etc/repart.d/growroot.conf > /dev/null;
+    __AS=$?
+    get_tmp_path__110_v0 ;
+    __AF_get_tmp_path110_v0__185_57="${__AF_get_tmp_path110_v0}";
+    echo "GrowFileSystem=true" | sudo tee -a ${__AF_get_tmp_path110_v0__185_57}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
     echo_info__91_v0 "set hostname";
-    __AF_echo_info91_v0__131_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__131_5" > /dev/null 2>&1
+    __AF_echo_info91_v0__187_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__187_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__132_57="${__AF_get_tmp_path110_v0}";
-    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path110_v0__132_57}/etc/hostname > /dev/null;
+    __AF_get_tmp_path110_v0__188_57="${__AF_get_tmp_path110_v0}";
+    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path110_v0__188_57}/etc/hostname > /dev/null;
     __AS=$?
+    echo_info__91_v0 "update-initramfs -u";
+    __AF_echo_info91_v0__190_5="$__AF_echo_info91_v0";
+    echo "$__AF_echo_info91_v0__190_5" > /dev/null 2>&1
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__133_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__133_27}" "useradd  -s /bin/bash -m -g users deepin";
-    __AF_run_command_in_chroot170_v0__133_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__133_5" > /dev/null 2>&1
+    __AF_get_tmp_path110_v0__191_27="${__AF_get_tmp_path110_v0}";
+    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__191_27}" "update-initramfs -u";
+    __AF_run_command_in_chroot170_v0__191_5="$__AF_run_command_in_chroot170_v0";
+    echo "$__AF_run_command_in_chroot170_v0__191_5" > /dev/null 2>&1
+    if [ $([ "_${device}" == "_rock-5b" ]; echo $?) != 0 ]; then
+        get_tmp_path__110_v0 ;
+        __AF_get_tmp_path110_v0__194_31="${__AF_get_tmp_path110_v0}";
+        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__194_31}" "useradd  -s /bin/bash -m -g users deepin";
+        __AF_run_command_in_chroot170_v0__194_9="$__AF_run_command_in_chroot170_v0";
+        echo "$__AF_run_command_in_chroot170_v0__194_9" > /dev/null 2>&1
+        get_tmp_path__110_v0 ;
+        __AF_get_tmp_path110_v0__195_31="${__AF_get_tmp_path110_v0}";
+        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__195_31}" "usermod -a -G sudo deepin";
+        __AF_run_command_in_chroot170_v0__195_9="$__AF_run_command_in_chroot170_v0";
+        echo "$__AF_run_command_in_chroot170_v0__195_9" > /dev/null 2>&1
+        get_tmp_path__110_v0 ;
+        __AF_get_tmp_path110_v0__196_31="${__AF_get_tmp_path110_v0}";
+        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__196_31}" "echo deepin:deepin | chpasswd";
+        __AF_run_command_in_chroot170_v0__196_9="$__AF_run_command_in_chroot170_v0";
+        echo "$__AF_run_command_in_chroot170_v0__196_9" > /dev/null 2>&1
+fi
     get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__134_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__134_27}" "usermod -a -G sudo deepin";
-    __AF_run_command_in_chroot170_v0__134_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__134_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__135_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__135_27}" "echo root:deepin | chpasswd";
-    __AF_run_command_in_chroot170_v0__135_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__135_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__136_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__136_27}" "echo deepin:deepin | chpasswd";
-    __AF_run_command_in_chroot170_v0__136_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__136_5" > /dev/null 2>&1
+    __AF_get_tmp_path110_v0__198_27="${__AF_get_tmp_path110_v0}";
+    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__198_27}" "echo root:deepin | chpasswd";
+    __AF_run_command_in_chroot170_v0__198_5="$__AF_run_command_in_chroot170_v0";
+    echo "$__AF_run_command_in_chroot170_v0__198_5" > /dev/null 2>&1
     umount_chroot__169_v0 ;
-    __AF_umount_chroot169_v0__138_5="$__AF_umount_chroot169_v0";
-    echo "$__AF_umount_chroot169_v0__138_5" > /dev/null 2>&1
+    __AF_umount_chroot169_v0__200_5="$__AF_umount_chroot169_v0";
+    echo "$__AF_umount_chroot169_v0__200_5" > /dev/null 2>&1
     sudo e2fsck -p -f ${loop_device}p${root_part} > /dev/null 2>&1;
     __AS=$?
-    sudo resize2fs ${loop_device}p${root_part} > /dev/null 2>&1;
+    sudo resize2fs -M ${loop_device}p${root_part} > /dev/null 2>&1;
     __AS=$?
     sudo losetup -D ${loop_device};
     __AS=$?
     echo_success__92_v0 "output ${image_path} success";
-    __AF_echo_success92_v0__143_5="$__AF_echo_success92_v0";
-    echo "$__AF_echo_success92_v0__143_5" > /dev/null 2>&1
+    __AF_echo_success92_v0__205_5="$__AF_echo_success92_v0";
+    echo "$__AF_echo_success92_v0__205_5" > /dev/null 2>&1
 }
 build_cmd__192_v0() {
     local build_tag=$1
@@ -698,7 +841,7 @@ fi
         run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
         __AF_run_command_in_chroot130_v0__20_9="$__AF_run_command_in_chroot130_v0";
         echo "$__AF_run_command_in_chroot130_v0__20_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen\`";
+        run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
         __AF_run_command_in_chroot130_v0__21_9="$__AF_run_command_in_chroot130_v0";
         echo "$__AF_run_command_in_chroot130_v0__21_9" > /dev/null 2>&1
         run_command_in_chroot__130_v0 "${rootfs_path}" "locale-gen";

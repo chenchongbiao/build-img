@@ -27,3 +27,9 @@ make
 ```bash
 ./bimg build board -n "deepin" -d "beige" -c "main,commercial,community" -a "arm64" -s "deb https://community-packages.deepin.com/beige/ beige main commercial community" --device qemu
 ```
+
+#### rock-5b
+
+```bash
+./bimg build board -n "deepin" -d "beige" -c "main,commercial,community" -a "arm64" -s "deb https://community-packages.deepin.com/beige/ beige main commercial community" --device rock-5b
+```

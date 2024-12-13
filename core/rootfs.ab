@@ -7,8 +7,8 @@ import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file
 // 创建 rootfs 缓存
 pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device) {
     let mininal_packages = "apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
-    let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr,linux-firmware"
-    let desktop_packages = ""
+    let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr" // linux-firmware 被升级后无法正常安装，先移除
+    let desktop_packages = "firefox"
     let include_packages = ""
 
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
