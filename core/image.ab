@@ -105,13 +105,38 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
     unsafe $sudo mkdir {get_tmp_path()}/boot/efi$
     echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
     unsafe $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
-    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi$
+    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
+
     echo_info("copy grup to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot$
+    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
+
     echo_info("copy kernel to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot$
+    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
     unsafe $sudo mkdir {get_tmp_path()}/lib/modules$
-    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules$
+    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
+
+    echo_info("copy sources.list.d to {get_tmp_path()}/etc/apt/sources.list.d")
+    unsafe $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
+
+    if device == "rock-5b" {
+        unsafe $sudo mkdir {get_tmp_path()}/config$
+        echo_info("copy extra packages to {get_tmp_path()}/tmp")
+        unsafe $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp || true$
+        echo_info("installing extra packages from {get_tmp_path()}/tmp")
+        run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb")
+        run_command_in_chroot(get_tmp_path(), "apt update")
+        run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b radxa-overlays-dkms u-boot-rock-5b \\
+			radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
+			radxa-system-config-kernel-cmdline-ttyfiq0 \\
+			rfkill rsetup-config-first-boot \\
+			u-boot-tools efibootmgr systemd-boot apt-listchanges \\
+			pipewire-audio avahi-daemon")
+        run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
+        run_command_in_chroot(get_tmp_path(), "mkdir /boot/extlinux && u-boot-update")
+        unsafe $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
+        echo_info("copy config to {get_tmp_path()}/config")
+        unsafe $sudo cp -r {device_config_path}/config/* {get_tmp_path()}/config$
+    }
 
     echo_info("generate /etc/fstab")
     let root_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{root_part}$
@@ -125,8 +150,8 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
     let uefi_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
     echo_info("efi uuid: {uefi_part_uuid}")
     unsafe $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>&1 || true$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>&1 || true$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
+    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>/dev/null$
 
     echo_info("set hostname")
     unsafe $echo \"deepin-{arch}-{device}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$

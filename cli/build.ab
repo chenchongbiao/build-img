@@ -18,7 +18,7 @@ pub fun build_cmd(build_tag, distro_name, distro_version, components, arch, sour
     if not file_exist(tar_file_path) {
         echo_info("locale-gen")
         run_command_in_chroot(rootfs_path, "sed -i -E 's/#[[:space:]]?(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen")
-        run_command_in_chroot(rootfs_path, "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen`")
+        run_command_in_chroot(rootfs_path, "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen")
         run_command_in_chroot(rootfs_path, "locale-gen")
         run_command_in_chroot(rootfs_path, "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales")
         echo_info("Annotation USERS_GID and USERS_GROUP")
