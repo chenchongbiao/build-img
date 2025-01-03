@@ -1,4 +1,4 @@
-import { file_exist, dir_exist } from "std/fs"
+import { file_exists, dir_exists } from "std/fs"
 import { echo_info } from "std/env"
 
 import { create_rootfs_cache, create_rootfs_tar_file } from "../core/rootfs.ab"
@@ -9,14 +9,14 @@ import { create_image } from "../core/image.ab"
 pub fun build_cmd(build_tag, distro_name, distro_version, components, arch, sources, base_type, device, image_size) {
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
 
-    if not dir_exist(rootfs_path): create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device)
+    if not dir_exists(rootfs_path): create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device)
     else: echo_info("rootfs is exist")
 
     let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
     let tar_file_path = get_tar_file_path(tar_file_name)
 
-    if not file_exist(tar_file_path) {
-        echo_info("locale-gen")
+    if not file_exists(tar_file_path) {
+        // echo_info("locale-gen")
         run_command_in_chroot(rootfs_path, "sed -i -E 's/#[[:space:]]?(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen")
         run_command_in_chroot(rootfs_path, "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen")
         run_command_in_chroot(rootfs_path, "locale-gen")
@@ -31,6 +31,6 @@ pub fun build_cmd(build_tag, distro_name, distro_version, components, arch, sour
     }
 
     if build_tag == "board" {
-        create_image(distro_name, distro_version, arch, base_type, device, image_size)
+        create_image(distro_name, distro_version, arch, sources, base_type, device, image_size)
     }
 }

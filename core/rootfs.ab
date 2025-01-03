@@ -1,6 +1,6 @@
-import { file_exist, dir_exist, create_dir } from "std/fs"
+import { file_exists, dir_exists, dir_create } from "std/fs"
 import { join } from "std/text"
-import { echo_info, echo_success, error } from "std/env"
+import { echo_info, echo_success, echo_error } from "std/env"
 
 import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_tmp_path } from "../utils/file.ab"
 
@@ -8,6 +8,9 @@ import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file
 pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device) {
     let mininal_packages = "apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
     let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr" // linux-firmware 被升级后无法正常安装，先移除
+    // 桌面环境 deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras
+    // 控制中心输入法插件 deepin-fcitx5configtool-plugin
+    // 安装器 deepin-installer deepin-installer-timezones
     let desktop_packages = "firefox"
     let include_packages = ""
 
@@ -22,12 +25,12 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         }
     }
 
-    if not dir_exist(rootfs_path) {
+    if not dir_exists(rootfs_path) {
         echo_info("create {rootfs_path}")
-        create_dir(rootfs_path)
+        dir_create(rootfs_path)
     }
 
-    unsafe $sudo mmdebstrap \
+    trust $sudo mmdebstrap \
         --hook-dir=/usr/share/mmdebstrap/hooks/merged-usr \
         --include={include_packages} \
         --components={components} \
@@ -43,11 +46,11 @@ pub fun create_rootfs_tar_file(distro_name, distro_version, arch, base_type) {
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
     let tar_file_path = get_tar_file_path(tar_file_name)
 
-    if not file_exist(tar_file_path) {
+    if not file_exists(tar_file_path) {
         echo_info("create {tar_file_name}")
         $cd {get_rootfs_cache_path()} && sudo tar zfcp {tar_file_name} --xattrs  --exclude='./dev/*' --exclude='./proc/*' \
 	    --exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' -C {rootfs_path} .$ failed {
-            error("create {tar_file_name} error")
+            echo_error("create {tar_file_name} error")
         }
         echo_success("create {tar_file_name} success")
     } else {
@@ -57,6 +60,6 @@ pub fun create_rootfs_tar_file(distro_name, distro_version, arch, base_type) {
 
 pub fun extract_rootfs(tar_file_path) {
     // 解压前清除，目录下的内容
-    unsafe $sudo rm -rf {get_tmp_path()}/*$
-    unsafe $sudo tar -zxpf {tar_file_path} --xattrs -C {get_tmp_path()}$
+    trust $sudo rm -rf {get_tmp_path()}/*$
+    trust $sudo tar -zxpf {tar_file_path} --xattrs -C {get_tmp_path()}$
 }

@@ -1,179 +1,176 @@
 #!/usr/bin/env bash
 # Written in [Amber](https://amber-lang.com/)
-# version: 0.3.5-alpha
-# date: 2024-12-25 14:20:14
-dir_exist__0_v0() {
-    local path=$1
-    [ -d "${path}" ];
+# version: 0.4.0-alpha
+# date: 2024-12-26 14:50:11
+join__6_v0() {
+    local list=("${!1}")
+    local delimiter=$2
+    __AMBER_VAL_0=$( IFS="${delimiter}" ; echo "${list[*]}" );
     __AS=$?;
-if [ $__AS != 0 ]; then
-        __AF_dir_exist0_v0=0;
-        return 0
-fi
-    __AF_dir_exist0_v0=1;
+    __AF_join6_v0="${__AMBER_VAL_0}";
     return 0
 }
-file_exist__1_v0() {
+dir_exists__32_v0() {
     local path=$1
-    [ -f "${path}" ];
+     [ -d "${path}" ] ;
     __AS=$?;
 if [ $__AS != 0 ]; then
-        __AF_file_exist1_v0=0;
+        __AF_dir_exists32_v0=0;
         return 0
 fi
-    __AF_file_exist1_v0=1;
+    __AF_dir_exists32_v0=1;
     return 0
 }
-create_dir__6_v0() {
+file_exists__33_v0() {
     local path=$1
-    dir_exist__0_v0 "${path}";
-    __AF_dir_exist0_v0__48_12="$__AF_dir_exist0_v0";
-    if [ $(echo  '!' "$__AF_dir_exist0_v0__48_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        mkdir -p "${path}";
+     [ -f "${path}" ] ;
+    __AS=$?;
+if [ $__AS != 0 ]; then
+        __AF_file_exists33_v0=0;
+        return 0
+fi
+    __AF_file_exists33_v0=1;
+    return 0
+}
+dir_create__38_v0() {
+    local path=$1
+    dir_exists__32_v0 "${path}";
+    __AF_dir_exists32_v0__52_12="$__AF_dir_exists32_v0";
+    if [ $(echo  '!' "$__AF_dir_exists32_v0__52_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+         mkdir -p "${path}" ;
         __AS=$?
 fi
 }
-join__26_v0() {
-    local list=("${!1}")
-    local delimiter=$2
-    __AMBER_VAL_0=$(IFS="${delimiter}" ; echo "${list[*]}");
-    __AS=$?;
-    __AF_join26_v0="${__AMBER_VAL_0}";
-    return 0
-}
-exit__82_v0() {
-    local code=$1
-    exit "${code}";
-    __AS=$?
-}
-printf__84_v0() {
+printf__101_v0() {
     local format=$1
     local args=("${!2}")
-    args=("${format}" "${args[@]}");
+     args=("${format}" "${args[@]}") ;
     __AS=$?
-    printf "${args[@]}";
+     printf "${args[@]}" ;
     __AS=$?
 }
-echo_info__91_v0() {
-    local message=$1
-    __AMBER_ARRAY_0=("${message}");
-    printf__84_v0 "\x1b[1;3;97;44m %s \x1b[0m
-" __AMBER_ARRAY_0[@];
-    __AF_printf84_v0__143_5="$__AF_printf84_v0";
-    echo "$__AF_printf84_v0__143_5" > /dev/null 2>&1
-}
-echo_success__92_v0() {
+echo_info__108_v0() {
     local message=$1
     __AMBER_ARRAY_1=("${message}");
-    printf__84_v0 "\x1b[1;3;97;42m %s \x1b[0m
+    printf__101_v0 "\x1b[1;3;97;44m%s\x1b[0m
 " __AMBER_ARRAY_1[@];
-    __AF_printf84_v0__148_5="$__AF_printf84_v0";
-    echo "$__AF_printf84_v0__148_5" > /dev/null 2>&1
+    __AF_printf101_v0__147_5="$__AF_printf101_v0";
+    echo "$__AF_printf101_v0__147_5" > /dev/null 2>&1
 }
-error__94_v0() {
+echo_success__109_v0() {
+    local message=$1
+    __AMBER_ARRAY_2=("${message}");
+    printf__101_v0 "\x1b[1;3;97;42m%s\x1b[0m
+" __AMBER_ARRAY_2[@];
+    __AF_printf101_v0__152_5="$__AF_printf101_v0";
+    echo "$__AF_printf101_v0__152_5" > /dev/null 2>&1
+}
+echo_error__111_v0() {
     local message=$1
     local exit_code=$2
-    __AMBER_ARRAY_2=("${message}");
-    printf__84_v0 "\x1b[1;3;97;41m %s \x1b[0m
-" __AMBER_ARRAY_2[@];
-    __AF_printf84_v0__158_5="$__AF_printf84_v0";
-    echo "$__AF_printf84_v0__158_5" > /dev/null 2>&1
+    __AMBER_ARRAY_3=("${message}");
+    printf__101_v0 "\x1b[1;3;97;41m%s\x1b[0m
+" __AMBER_ARRAY_3[@];
+    __AF_printf101_v0__162_5="$__AF_printf101_v0";
+    echo "$__AF_printf101_v0__162_5" > /dev/null 2>&1
     if [ $(echo ${exit_code} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        exit__82_v0 ${exit_code};
-        __AF_exit82_v0__159_24="$__AF_exit82_v0";
-        echo "$__AF_exit82_v0__159_24" > /dev/null 2>&1
+        exit ${exit_code}
 fi
 }
-__AMBER_VAL_1=$(pwd);
+__AMBER_VAL_4=$(pwd);
 __AS=$?;
-__0_pwd="${__AMBER_VAL_1}"
-get_cache_path__105_v0() {
-    __AF_get_cache_path105_v0="${__0_pwd}/cache";
+__0_pwd="${__AMBER_VAL_4}"
+get_cache_path__122_v0() {
+    __AF_get_cache_path122_v0="${__0_pwd}/cache";
     return 0
 }
-get_output_path__106_v0() {
-    __AF_get_output_path106_v0="${__0_pwd}/output";
+get_output_path__123_v0() {
+    __AF_get_output_path123_v0="${__0_pwd}/output";
     return 0
 }
-get_rootfs_name__107_v0() {
+get_rootfs_name__124_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    __AF_get_rootfs_name107_v0="${distro_name}-${distro_version}-${arch}-${base_type}";
+    __AF_get_rootfs_name124_v0="${distro_name}-${distro_version}-${arch}-${base_type}";
     return 0
 }
-get_rootfs_path__108_v0() {
+get_rootfs_path__125_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    get_cache_path__105_v0 ;
-    __AF_get_cache_path105_v0__18_14="${__AF_get_cache_path105_v0}";
-    get_rootfs_name__107_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_name107_v0__18_40="${__AF_get_rootfs_name107_v0}";
-    __AF_get_rootfs_path108_v0="${__AF_get_cache_path105_v0__18_14}/rootfs/${__AF_get_rootfs_name107_v0__18_40}";
+    get_cache_path__122_v0 ;
+    __AF_get_cache_path122_v0__18_14="${__AF_get_cache_path122_v0}";
+    get_rootfs_name__124_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_name124_v0__18_40="${__AF_get_rootfs_name124_v0}";
+    __AF_get_rootfs_path125_v0="${__AF_get_cache_path122_v0__18_14}/rootfs/${__AF_get_rootfs_name124_v0__18_40}";
     return 0
 }
-get_rootfs_cache_path__109_v0() {
-    get_cache_path__105_v0 ;
-    __AF_get_cache_path105_v0__22_14="${__AF_get_cache_path105_v0}";
-    __AF_get_rootfs_cache_path109_v0="${__AF_get_cache_path105_v0__22_14}/rootfs";
+get_rootfs_cache_path__126_v0() {
+    get_cache_path__122_v0 ;
+    __AF_get_cache_path122_v0__22_14="${__AF_get_cache_path122_v0}";
+    __AF_get_rootfs_cache_path126_v0="${__AF_get_cache_path122_v0__22_14}/rootfs";
     return 0
 }
-get_tmp_path__110_v0() {
-    get_cache_path__105_v0 ;
-    __AF_get_cache_path105_v0__26_14="${__AF_get_cache_path105_v0}";
-    __AF_get_tmp_path110_v0="${__AF_get_cache_path105_v0__26_14}/tmp";
+get_tmp_path__127_v0() {
+    get_cache_path__122_v0 ;
+    __AF_get_cache_path122_v0__26_14="${__AF_get_cache_path122_v0}";
+    __AF_get_tmp_path127_v0="${__AF_get_cache_path122_v0__26_14}/tmp";
     return 0
 }
-get_tar_file_name__111_v0() {
+get_tar_file_name__128_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    get_rootfs_name__107_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_name107_v0__30_14="${__AF_get_rootfs_name107_v0}";
-    __AF_get_tar_file_name111_v0="${__AF_get_rootfs_name107_v0__30_14}.tar.gz";
+    get_rootfs_name__124_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_name124_v0__30_14="${__AF_get_rootfs_name124_v0}";
+    __AF_get_tar_file_name128_v0="${__AF_get_rootfs_name124_v0__30_14}.tar.gz";
     return 0
 }
-get_tar_file_path__112_v0() {
+get_tar_file_path__129_v0() {
     local tar_file_name=$1
-    get_rootfs_cache_path__109_v0 ;
-    __AF_get_rootfs_cache_path109_v0__34_14="${__AF_get_rootfs_cache_path109_v0}";
-    __AF_get_tar_file_path112_v0="${__AF_get_rootfs_cache_path109_v0__34_14}/${tar_file_name}";
+    get_rootfs_cache_path__126_v0 ;
+    __AF_get_rootfs_cache_path126_v0__34_14="${__AF_get_rootfs_cache_path126_v0}";
+    __AF_get_tar_file_path129_v0="${__AF_get_rootfs_cache_path126_v0__34_14}/${tar_file_name}";
     return 0
 }
-get_image_name__113_v0() {
+get_image_name__130_v0() {
     local distro_name=$1
     local distro_version=$2
     local device=$3
     local arch=$4
     local base_type=$5
-    __AF_get_image_name113_v0="${distro_name}-${distro_version}-${device}-${arch}-${base_type}.img";
+    __AF_get_image_name130_v0="${distro_name}-${distro_version}-${device}-${arch}-${base_type}.img";
     return 0
 }
-get_image_path__114_v0() {
+get_image_path__131_v0() {
     local distro_name=$1
     local distro_version=$2
     local device=$3
     local arch=$4
     local base_type=$5
-    get_output_path__106_v0 ;
-    __AF_get_output_path106_v0__42_14="${__AF_get_output_path106_v0}";
-    get_image_name__113_v0 "${distro_name}" "${distro_version}" "${device}" "${arch}" "${base_type}";
-    __AF_get_image_name113_v0__42_34="${__AF_get_image_name113_v0}";
-    __AF_get_image_path114_v0="${__AF_get_output_path106_v0__42_14}/${__AF_get_image_name113_v0__42_34}";
+    get_output_path__123_v0 ;
+    __AF_get_output_path123_v0__42_14="${__AF_get_output_path123_v0}";
+    get_image_name__130_v0 "${distro_name}" "${distro_version}" "${device}" "${arch}" "${base_type}";
+    __AF_get_image_name130_v0__42_34="${__AF_get_image_name130_v0}";
+    __AF_get_image_path131_v0="${__AF_get_output_path123_v0__42_14}/${__AF_get_image_name130_v0__42_34}";
     return 0
 }
-get_device_config_path__115_v0() {
+get_config_path__132_v0() {
+    __AF_get_config_path132_v0="${__0_pwd}/config/";
+    return 0
+}
+get_device_config_path__133_v0() {
     local arch=$1
     local device=$2
-    __AF_get_device_config_path115_v0="${__0_pwd}/config/${arch}/${device}";
+    __AF_get_device_config_path133_v0="${__0_pwd}/config/${arch}/${device}";
     return 0
 }
 # 创建 rootfs 缓存
-create_rootfs_cache__122_v0() {
+create_rootfs_cache__140_v0() {
     local distro_name=$1
     local distro_version=$2
     local components=$3
@@ -184,237 +181,241 @@ create_rootfs_cache__122_v0() {
     local mininal_packages="apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
     local board_packages="dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr"
     # linux-firmware 被升级后无法正常安装，先移除
+    # 桌面环境 deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras
+    # 控制中心输入法插件 deepin-fcitx5configtool-plugin
+    # 安装器 deepin-installer deepin-installer-timezones
     local desktop_packages="firefox"
     local include_packages=""
-    get_rootfs_path__108_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_path108_v0__14_23="${__AF_get_rootfs_path108_v0}";
-    local rootfs_path="${__AF_get_rootfs_path108_v0__14_23}"
+    get_rootfs_path__125_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_path125_v0__17_23="${__AF_get_rootfs_path125_v0}";
+    local rootfs_path="${__AF_get_rootfs_path125_v0__17_23}"
     if [ $([ "_${base_type}" != "_minimal" ]; echo $?) != 0 ]; then
-        __AMBER_ARRAY_3=("${mininal_packages}" "${board_packages}");
-        join__26_v0 __AMBER_ARRAY_3[@] ",";
-        __AF_join26_v0__18_32="${__AF_join26_v0}";
-        include_packages="${__AF_join26_v0__18_32}"
+        __AMBER_ARRAY_5=("${mininal_packages}" "${board_packages}");
+        join__6_v0 __AMBER_ARRAY_5[@] ",";
+        __AF_join6_v0__21_32="${__AF_join6_v0}";
+        include_packages="${__AF_join6_v0__21_32}"
 elif [ $([ "_${base_type}" != "_desktop" ]; echo $?) != 0 ]; then
-        __AMBER_ARRAY_4=("${mininal_packages}" "${board_packages}" "${desktop_packages}");
-        join__26_v0 __AMBER_ARRAY_4[@] ",";
-        __AF_join26_v0__21_32="${__AF_join26_v0}";
-        include_packages="${__AF_join26_v0__21_32}"
+        __AMBER_ARRAY_6=("${mininal_packages}" "${board_packages}" "${desktop_packages}");
+        join__6_v0 __AMBER_ARRAY_6[@] ",";
+        __AF_join6_v0__24_32="${__AF_join6_v0}";
+        include_packages="${__AF_join6_v0__24_32}"
 fi
-    dir_exist__0_v0 "${rootfs_path}";
-    __AF_dir_exist0_v0__25_12="$__AF_dir_exist0_v0";
-    if [ $(echo  '!' "$__AF_dir_exist0_v0__25_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        echo_info__91_v0 "create ${rootfs_path}";
-        __AF_echo_info91_v0__26_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__26_9" > /dev/null 2>&1
-        create_dir__6_v0 "${rootfs_path}";
-        __AF_create_dir6_v0__27_9="$__AF_create_dir6_v0";
-        echo "$__AF_create_dir6_v0__27_9" > /dev/null 2>&1
+    dir_exists__32_v0 "${rootfs_path}";
+    __AF_dir_exists32_v0__28_12="$__AF_dir_exists32_v0";
+    if [ $(echo  '!' "$__AF_dir_exists32_v0__28_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+        echo_info__108_v0 "create ${rootfs_path}";
+        __AF_echo_info108_v0__29_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__29_9" > /dev/null 2>&1
+        dir_create__38_v0 "${rootfs_path}";
+        __AF_dir_create38_v0__30_9="$__AF_dir_create38_v0";
+        echo "$__AF_dir_create38_v0__30_9" > /dev/null 2>&1
 fi
     sudo mmdebstrap         --hook-dir=/usr/share/mmdebstrap/hooks/merged-usr         --include=${include_packages}         --components=${components}         --variant=minbase         --architectures=${arch}         ${distro_version}         ${rootfs_path}         "${sources}";
     __AS=$?
 }
-create_rootfs_tar_file__123_v0() {
+create_rootfs_tar_file__141_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    get_tar_file_name__111_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_tar_file_name111_v0__42_25="${__AF_get_tar_file_name111_v0}";
-    local tar_file_name="${__AF_get_tar_file_name111_v0__42_25}"
-    get_rootfs_path__108_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_path108_v0__43_23="${__AF_get_rootfs_path108_v0}";
-    local rootfs_path="${__AF_get_rootfs_path108_v0__43_23}"
-    get_tar_file_path__112_v0 "${tar_file_name}";
-    __AF_get_tar_file_path112_v0__44_25="${__AF_get_tar_file_path112_v0}";
-    local tar_file_path="${__AF_get_tar_file_path112_v0__44_25}"
-    file_exist__1_v0 "${tar_file_path}";
-    __AF_file_exist1_v0__46_12="$__AF_file_exist1_v0";
-    if [ $(echo  '!' "$__AF_file_exist1_v0__46_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        echo_info__91_v0 "create ${tar_file_name}";
-        __AF_echo_info91_v0__47_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__47_9" > /dev/null 2>&1
-        get_rootfs_cache_path__109_v0 ;
-        __AF_get_rootfs_cache_path109_v0__48_14="${__AF_get_rootfs_cache_path109_v0}";
-        cd ${__AF_get_rootfs_cache_path109_v0__48_14} && sudo tar zfcp ${tar_file_name} --xattrs  --exclude='./dev/*' --exclude='./proc/*' 	    --exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' -C ${rootfs_path} .;
+    get_tar_file_name__128_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_tar_file_name128_v0__45_25="${__AF_get_tar_file_name128_v0}";
+    local tar_file_name="${__AF_get_tar_file_name128_v0__45_25}"
+    get_rootfs_path__125_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_path125_v0__46_23="${__AF_get_rootfs_path125_v0}";
+    local rootfs_path="${__AF_get_rootfs_path125_v0__46_23}"
+    get_tar_file_path__129_v0 "${tar_file_name}";
+    __AF_get_tar_file_path129_v0__47_25="${__AF_get_tar_file_path129_v0}";
+    local tar_file_path="${__AF_get_tar_file_path129_v0__47_25}"
+    file_exists__33_v0 "${tar_file_path}";
+    __AF_file_exists33_v0__49_12="$__AF_file_exists33_v0";
+    if [ $(echo  '!' "$__AF_file_exists33_v0__49_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+        echo_info__108_v0 "create ${tar_file_name}";
+        __AF_echo_info108_v0__50_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__50_9" > /dev/null 2>&1
+        get_rootfs_cache_path__126_v0 ;
+        __AF_get_rootfs_cache_path126_v0__51_14="${__AF_get_rootfs_cache_path126_v0}";
+        cd ${__AF_get_rootfs_cache_path126_v0__51_14} && sudo tar zfcp ${tar_file_name} --xattrs  --exclude='./dev/*' --exclude='./proc/*' 	    --exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' --exclude='./home/*' --exclude='./root/*' -C ${rootfs_path} .;
         __AS=$?;
 if [ $__AS != 0 ]; then
-            error__94_v0 "create ${tar_file_name} error" 1;
-            __AF_error94_v0__50_13="$__AF_error94_v0";
-            echo "$__AF_error94_v0__50_13" > /dev/null 2>&1
+            echo_error__111_v0 "create ${tar_file_name} error" 1;
+            __AF_echo_error111_v0__53_13="$__AF_echo_error111_v0";
+            echo "$__AF_echo_error111_v0__53_13" > /dev/null 2>&1
 fi
-        echo_success__92_v0 "create ${tar_file_name} success";
-        __AF_echo_success92_v0__52_9="$__AF_echo_success92_v0";
-        echo "$__AF_echo_success92_v0__52_9" > /dev/null 2>&1
+        echo_success__109_v0 "create ${tar_file_name} success";
+        __AF_echo_success109_v0__55_9="$__AF_echo_success109_v0";
+        echo "$__AF_echo_success109_v0__55_9" > /dev/null 2>&1
 else
-        echo_info__91_v0 "${tar_file_name} is exists";
-        __AF_echo_info91_v0__54_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__54_9" > /dev/null 2>&1
+        echo_info__108_v0 "${tar_file_name} is exists";
+        __AF_echo_info108_v0__57_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__57_9" > /dev/null 2>&1
 fi
 }
-run_command_in_chroot__130_v0() {
+run_command_in_chroot__148_v0() {
     local rootfs_path=$1
     local command=$2
     export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
     __AS=$?
 }
-__AMBER_VAL_2=$(pwd);
+__AMBER_VAL_7=$(pwd);
 __AS=$?;
-__1_pwd="${__AMBER_VAL_2}"
-get_cache_path__134_v0() {
-    __AF_get_cache_path134_v0="${__1_pwd}/cache";
+__1_pwd="${__AMBER_VAL_7}"
+get_cache_path__152_v0() {
+    __AF_get_cache_path152_v0="${__1_pwd}/cache";
     return 0
 }
-get_rootfs_name__136_v0() {
+get_rootfs_name__154_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    __AF_get_rootfs_name136_v0="${distro_name}-${distro_version}-${arch}-${base_type}";
+    __AF_get_rootfs_name154_v0="${distro_name}-${distro_version}-${arch}-${base_type}";
     return 0
 }
-get_rootfs_path__137_v0() {
+get_rootfs_path__155_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    get_cache_path__134_v0 ;
-    __AF_get_cache_path134_v0__18_14="${__AF_get_cache_path134_v0}";
-    get_rootfs_name__136_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_name136_v0__18_40="${__AF_get_rootfs_name136_v0}";
-    __AF_get_rootfs_path137_v0="${__AF_get_cache_path134_v0__18_14}/rootfs/${__AF_get_rootfs_name136_v0__18_40}";
+    get_cache_path__152_v0 ;
+    __AF_get_cache_path152_v0__18_14="${__AF_get_cache_path152_v0}";
+    get_rootfs_name__154_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_name154_v0__18_40="${__AF_get_rootfs_name154_v0}";
+    __AF_get_rootfs_path155_v0="${__AF_get_cache_path152_v0__18_14}/rootfs/${__AF_get_rootfs_name154_v0__18_40}";
     return 0
 }
-get_rootfs_cache_path__138_v0() {
-    get_cache_path__134_v0 ;
-    __AF_get_cache_path134_v0__22_14="${__AF_get_cache_path134_v0}";
-    __AF_get_rootfs_cache_path138_v0="${__AF_get_cache_path134_v0__22_14}/rootfs";
+get_rootfs_cache_path__156_v0() {
+    get_cache_path__152_v0 ;
+    __AF_get_cache_path152_v0__22_14="${__AF_get_cache_path152_v0}";
+    __AF_get_rootfs_cache_path156_v0="${__AF_get_cache_path152_v0__22_14}/rootfs";
     return 0
 }
-get_tar_file_name__140_v0() {
+get_tar_file_name__158_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
     local base_type=$4
-    get_rootfs_name__136_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_name136_v0__30_14="${__AF_get_rootfs_name136_v0}";
-    __AF_get_tar_file_name140_v0="${__AF_get_rootfs_name136_v0__30_14}.tar.gz";
+    get_rootfs_name__154_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_name154_v0__30_14="${__AF_get_rootfs_name154_v0}";
+    __AF_get_tar_file_name158_v0="${__AF_get_rootfs_name154_v0__30_14}.tar.gz";
     return 0
 }
-get_tar_file_path__141_v0() {
+get_tar_file_path__159_v0() {
     local tar_file_name=$1
-    get_rootfs_cache_path__138_v0 ;
-    __AF_get_rootfs_cache_path138_v0__34_14="${__AF_get_rootfs_cache_path138_v0}";
-    __AF_get_tar_file_path141_v0="${__AF_get_rootfs_cache_path138_v0__34_14}/${tar_file_name}";
+    get_rootfs_cache_path__156_v0 ;
+    __AF_get_rootfs_cache_path156_v0__34_14="${__AF_get_rootfs_cache_path156_v0}";
+    __AF_get_tar_file_path159_v0="${__AF_get_rootfs_cache_path156_v0__34_14}/${tar_file_name}";
     return 0
 }
-floor__154_v0() {
+math_floor__173_v0() {
     local number=$1
-    __AMBER_VAL_3=$(echo "${number}" | awk '{printf "%d", ($1 < 0 ? int($1) - 1 : int($1))}');
+    __AMBER_VAL_8=$( echo "${number}" | awk '{printf "%d", ($1 < 0 ? int($1) - 1 : int($1))}' );
     __AS=$?;
-    __AF_floor154_v0="${__AMBER_VAL_3}";
+    __AF_math_floor173_v0="${__AMBER_VAL_8}";
     return 0
 }
-ceil__155_v0() {
+math_ceil__174_v0() {
     local number=$1
-    floor__154_v0 ${number};
-    __AF_floor154_v0__26_12="$__AF_floor154_v0";
-    __AF_ceil155_v0=$(echo "$__AF_floor154_v0__26_12" '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
+    math_floor__173_v0 ${number};
+    __AF_math_floor173_v0__26_12="$__AF_math_floor173_v0";
+    __AF_math_ceil174_v0=$(echo "$__AF_math_floor173_v0__26_12" '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
     return 0
 }
-mount_chroot__168_v0() {
-            get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__5_53="${__AF_get_tmp_path110_v0}";
-        sudo mount -t tmpfs -o "size=99%" tmpfs ${__AF_get_tmp_path110_v0__5_53}/tmp;
+mount_chroot__187_v0() {
+            get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__5_53="${__AF_get_tmp_path127_v0}";
+        sudo mount -t tmpfs -o "size=99%" tmpfs ${__AF_get_tmp_path127_v0__5_53}/tmp;
         __AS=$?
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__6_53="${__AF_get_tmp_path110_v0}";
-        sudo mount -t tmpfs -o "size=99%" tmpfs ${__AF_get_tmp_path110_v0__6_53}/var/tmp;
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__6_53="${__AF_get_tmp_path127_v0}";
+        sudo mount -t tmpfs -o "size=99%" tmpfs ${__AF_get_tmp_path127_v0__6_53}/var/tmp;
         __AS=$?
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__7_37="${__AF_get_tmp_path110_v0}";
-        sudo mount -t proc chproc ${__AF_get_tmp_path110_v0__7_37}/proc;
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__7_37="${__AF_get_tmp_path127_v0}";
+        sudo mount -t proc chproc ${__AF_get_tmp_path127_v0__7_37}/proc;
         __AS=$?
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__8_37="${__AF_get_tmp_path110_v0}";
-        sudo mount -t sysfs chsys ${__AF_get_tmp_path110_v0__8_37}/sys;
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__8_37="${__AF_get_tmp_path127_v0}";
+        sudo mount -t sysfs chsys ${__AF_get_tmp_path127_v0__8_37}/sys;
         __AS=$?
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__9_34="${__AF_get_tmp_path110_v0}";
-        sudo mount --bind /dev ${__AF_get_tmp_path110_v0__9_34}/dev;
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__9_34="${__AF_get_tmp_path127_v0}";
+        sudo mount --bind /dev ${__AF_get_tmp_path127_v0__9_34}/dev;
         __AS=$?
 }
-umount_chroot__169_v0() {
+umount_chroot__188_v0() {
     while :
 do
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__15_37="${__AF_get_tmp_path110_v0}";
-        __AMBER_VAL_4=$(grep -E "${__AF_get_tmp_path110_v0__15_37}/(dev|proc|sys|tmp|var/tmp)" /proc/mounts);
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__15_36="${__AF_get_tmp_path127_v0}";
+        __AMBER_VAL_9=$(grep -E "${__AF_get_tmp_path127_v0__15_36}/(dev|proc|sys|tmp|var/tmp)" /proc/mounts);
         __AS=$?;
-        local res="${__AMBER_VAL_4}"
+        local res="${__AMBER_VAL_9}"
         if [ $([ "_${res}" != "_" ]; echo $?) != 0 ]; then
             break
 fi
-                    get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__19_39="${__AF_get_tmp_path110_v0}";
-            sudo umount --recursive ${__AF_get_tmp_path110_v0__19_39}/dev;
+                    get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__19_39="${__AF_get_tmp_path127_v0}";
+            sudo umount --recursive ${__AF_get_tmp_path127_v0__19_39}/dev;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__20_27="${__AF_get_tmp_path110_v0}";
-            sudo umount ${__AF_get_tmp_path110_v0__20_27}/proc;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__20_27="${__AF_get_tmp_path127_v0}";
+            sudo umount ${__AF_get_tmp_path127_v0__20_27}/proc;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__21_27="${__AF_get_tmp_path110_v0}";
-            sudo umount ${__AF_get_tmp_path110_v0__21_27}/sys;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__21_27="${__AF_get_tmp_path127_v0}";
+            sudo umount ${__AF_get_tmp_path127_v0__21_27}/sys;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__22_27="${__AF_get_tmp_path110_v0}";
-            sudo umount ${__AF_get_tmp_path110_v0__22_27}/tmp;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__22_27="${__AF_get_tmp_path127_v0}";
+            sudo umount ${__AF_get_tmp_path127_v0__22_27}/tmp;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__23_27="${__AF_get_tmp_path110_v0}";
-            sudo umount ${__AF_get_tmp_path110_v0__23_27}/var/tmp;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__23_27="${__AF_get_tmp_path127_v0}";
+            sudo umount ${__AF_get_tmp_path127_v0__23_27}/var/tmp;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__24_30="${__AF_get_tmp_path110_v0}";
-            sudo umount -l ${__AF_get_tmp_path110_v0__24_30};
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__24_30="${__AF_get_tmp_path127_v0}";
+            sudo umount -l ${__AF_get_tmp_path127_v0__24_30};
             __AS=$?
 done
 }
-run_command_in_chroot__170_v0() {
+run_command_in_chroot__189_v0() {
     local rootfs_path=$1
     local command=$2
     export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
     __AS=$?
 }
 # 创建 rootfs 缓存
-extract_rootfs__188_v0() {
+extract_rootfs__207_v0() {
     local tar_file_path=$1
     # 解压前清除，目录下的内容
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__60_26="${__AF_get_tmp_path110_v0}";
-    sudo rm -rf ${__AF_get_tmp_path110_v0__60_26}/*;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__63_25="${__AF_get_tmp_path127_v0}";
+    sudo rm -rf ${__AF_get_tmp_path127_v0__63_25}/*;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__61_57="${__AF_get_tmp_path110_v0}";
-    sudo tar -zxpf ${tar_file_path} --xattrs -C ${__AF_get_tmp_path110_v0__61_57};
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__64_56="${__AF_get_tmp_path127_v0}";
+    sudo tar -zxpf ${tar_file_path} --xattrs -C ${__AF_get_tmp_path127_v0__64_56};
     __AS=$?
 }
-create_image__190_v0() {
+create_image__209_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
-    local base_type=$4
-    local device=$5
-    local image_size=$6
-    get_rootfs_path__108_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_path108_v0__11_23="${__AF_get_rootfs_path108_v0}";
-    local rootfs_path="${__AF_get_rootfs_path108_v0__11_23}"
-    __AMBER_VAL_5=$(sudo du --apparent-size -sm ${rootfs_path} | cut -f1);
+    local sources=$4
+    local base_type=$5
+    local device=$6
+    local image_size=$7
+    get_rootfs_path__125_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_path125_v0__10_23="${__AF_get_rootfs_path125_v0}";
+    local rootfs_path="${__AF_get_rootfs_path125_v0__10_23}"
+    __AMBER_VAL_10=$(sudo du --apparent-size -sm ${rootfs_path} | cut -f1);
     __AS=$?;
-    local rootfs_size="${__AMBER_VAL_5}"
-    echo_info__91_v0 "current rootfs size: ${rootfs_size} MiB";
-    __AF_echo_info91_v0__13_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__13_5" > /dev/null 2>&1
+    local rootfs_size="${__AMBER_VAL_10}"
+    echo_info__108_v0 "current rootfs size: ${rootfs_size} MiB";
+    __AF_echo_info108_v0__12_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__12_5" > /dev/null 2>&1
     local image_size_int="${image_size}"
     local uefi_size=300
     local extra_rootfs_size=500
@@ -426,28 +427,28 @@ fi
     # 再进行扩展，生成镜像的大小
     local sdsize=${fixed_image_size}
     if [ $([ "_${base_type}" != "_minimal" ]; echo $?) != 0 ]; then
-        # sdsize = unsafe $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
-        ceil__155_v0 $(echo $(echo $(echo ${fixed_image_size} '*' 1.3 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '/' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '*' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
-        __AF_ceil155_v0__30_18="$__AF_ceil155_v0";
-        sdsize="$__AF_ceil155_v0__30_18"
+        # sdsize = trust $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
+        math_ceil__174_v0 $(echo $(echo $(echo ${fixed_image_size} '*' 1.3 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '/' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '*' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
+        __AF_math_ceil174_v0__29_18="$__AF_math_ceil174_v0";
+        sdsize="$__AF_math_ceil174_v0__29_18"
 else
         # 安装桌面, 需要更大的空间
-        ceil__155_v0 $(echo $(echo $(echo ${fixed_image_size} '*' 1.35 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '/' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '*' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
-        __AF_ceil155_v0__33_18="$__AF_ceil155_v0";
-        sdsize="$__AF_ceil155_v0__33_18"
+        math_ceil__174_v0 $(echo $(echo $(echo ${fixed_image_size} '*' 1.35 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '/' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') '*' 4 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//');
+        __AF_math_ceil174_v0__32_18="$__AF_math_ceil174_v0";
+        sdsize="$__AF_math_ceil174_v0__32_18"
 fi
-    echo_info__91_v0 "set image size: ${sdsize} MIB";
-    __AF_echo_info91_v0__35_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__35_5" > /dev/null 2>&1
-    get_image_path__114_v0 "${distro_name}" "${distro_version}" "${device}" "${arch}" "${base_type}";
-    __AF_get_image_path114_v0__37_22="${__AF_get_image_path114_v0}";
-    local image_path="${__AF_get_image_path114_v0__37_22}"
+    echo_info__108_v0 "set image size: ${sdsize} MIB";
+    __AF_echo_info108_v0__34_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__34_5" > /dev/null 2>&1
+    get_image_path__131_v0 "${distro_name}" "${distro_version}" "${device}" "${arch}" "${base_type}";
+    __AF_get_image_path131_v0__36_22="${__AF_get_image_path131_v0}";
+    local image_path="${__AF_get_image_path131_v0__36_22}"
     dd if=/dev/zero of=${image_path} bs=1M count=${sdsize};
     __AS=$?;
 if [ $__AS != 0 ]; then
-        error__94_v0 "dd image error" 1;
-        __AF_error94_v0__39_9="$__AF_error94_v0";
-        echo "$__AF_error94_v0__39_9" > /dev/null 2>&1
+        echo_error__111_v0 "dd image error" 1;
+        __AF_echo_error111_v0__38_9="$__AF_echo_error111_v0";
+        echo "$__AF_echo_error111_v0__38_9" > /dev/null 2>&1
 fi
     local next=1
     local config_part=$(echo  '-' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')
@@ -458,46 +459,45 @@ fi
     local uefi_part=${next}
     next=$(echo ${next} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')
     local root_part=${next}
-    echo_info__91_v0 "create partition table";
-    __AF_echo_info91_v0__54_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__54_5" > /dev/null 2>&1
+    echo_info__108_v0 "create partition table";
+    __AF_echo_info108_v0__53_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__53_5" > /dev/null 2>&1
     if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
         # 这里给 rock5b 单独需要设置 config 分区，另外的设置根分区为 8300 的通用文件系统时启动后也无法正确挂载。这里设置 8305 Linux ARM64 root
         local config_size=16
-        (echo n; echo ${config_part}; echo "32768"; echo +${config_size}M; echo 0700; 		echo c; echo config; 		echo n; echo ${uefi_part}; echo "65536"; echo +${uefi_size}M; echo ef00; 		echo c; echo ${uefi_part}; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo 8300;		echo c; echo ${root_part}; echo root; 		echo w; echo y) | gdisk ${image_path};
+        (echo n; echo ${config_part}; echo "32768"; echo +${config_size}M; echo 0700; 		echo c; echo config; 		echo n; echo ${uefi_part}; echo "65536"; echo +${uefi_size}M; echo ef00; 		echo c; echo ${uefi_part}; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo "";		echo c; echo ${root_part}; echo root; 		echo w; echo y) | gdisk ${image_path};
         __AS=$?;
 if [ $__AS != 0 ]; then
-            error__94_v0 "create partition table error" 1;
-            __AF_error94_v0__65_13="$__AF_error94_v0";
-            echo "$__AF_error94_v0__65_13" > /dev/null 2>&1
+            echo_error__111_v0 "create partition table error" 1;
+            __AF_echo_error111_v0__64_13="$__AF_echo_error111_v0";
+            echo "$__AF_echo_error111_v0__64_13" > /dev/null 2>&1
 fi
         # 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
-        # unsafe $sudo parted {image_path} set {uefi_part} legacy_boot on $
         sudo parted ${image_path} set ${root_part} legacy_boot on ;
         __AS=$?
 else
         (echo n; echo ${uefi_part}; echo ""; echo +${uefi_size}M;  echo ef00; 		echo c; echo efi; 		echo n; echo ${root_part}; echo ""; echo ""; echo ""; 		echo c; echo ${root_part}; echo root; 		echo w; echo y) | gdisk ${image_path};
         __AS=$?;
 if [ $__AS != 0 ]; then
-            error__94_v0 "create partition table error" 1;
-            __AF_error94_v0__77_13="$__AF_error94_v0";
-            echo "$__AF_error94_v0__77_13" > /dev/null 2>&1
+            echo_error__111_v0 "create partition table error" 1;
+            __AF_echo_error111_v0__75_13="$__AF_echo_error111_v0";
+            echo "$__AF_echo_error111_v0__75_13" > /dev/null 2>&1
 fi
 fi
-    echo_info__91_v0 "losetup ${image_path}";
-    __AF_echo_info91_v0__81_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__81_5" > /dev/null 2>&1
-    __AMBER_VAL_6=$(sudo losetup -Pf --show ${image_path});
+    echo_info__108_v0 "losetup ${image_path}";
+    __AF_echo_info108_v0__79_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__79_5" > /dev/null 2>&1
+    __AMBER_VAL_11=$(sudo losetup -Pf --show ${image_path});
     __AS=$?;
 if [ $__AS != 0 ]; then
-        error__94_v0 "losetup -Pf --show ${image_path} error" 1;
-        __AF_error94_v0__83_9="$__AF_error94_v0";
-        echo "$__AF_error94_v0__83_9" > /dev/null 2>&1
+        echo_error__111_v0 "losetup -Pf --show ${image_path} error" 1;
+        __AF_echo_error111_v0__81_9="$__AF_echo_error111_v0";
+        echo "$__AF_echo_error111_v0__81_9" > /dev/null 2>&1
 fi;
-    local loop_device="${__AMBER_VAL_6}"
-    get_device_config_path__115_v0 "${arch}" "${device}";
-    __AF_get_device_config_path115_v0__86_30="${__AF_get_device_config_path115_v0}";
-    local device_config_path="${__AF_get_device_config_path115_v0__86_30}"
+    local loop_device="${__AMBER_VAL_11}"
+    get_device_config_path__133_v0 "${arch}" "${device}";
+    __AF_get_device_config_path133_v0__84_30="${__AF_get_device_config_path133_v0}";
+    local device_config_path="${__AF_get_device_config_path133_v0__84_30}"
             # 设置这些文件系统的标签。dosfslabel 是用来设置vfat（FAT）文件系统的标签，e2label 是用来设置ext2/ext3/ext4文件系统的标签
         sudo mkfs.vfat -F32 ${loop_device}p${uefi_part};
         __AS=$?
@@ -515,294 +515,321 @@ fi;
             sudo fatlabel ${loop_device}p${config_part} config;
             __AS=$?
 fi
-    umount_chroot__169_v0 ;
-    __AF_umount_chroot169_v0__102_5="$__AF_umount_chroot169_v0";
-    echo "$__AF_umount_chroot169_v0__102_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__103_49="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__103_49}";
-    __AF_echo_info91_v0__103_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__103_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__104_51="${__AF_get_tmp_path110_v0}";
-    sudo mount ${loop_device}p${root_part} ${__AF_get_tmp_path110_v0__104_51};
+    umount_chroot__188_v0 ;
+    __AF_umount_chroot188_v0__100_5="$__AF_umount_chroot188_v0";
+    echo "$__AF_umount_chroot188_v0__100_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__101_49="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "mount ${loop_device}p${root_part} ${__AF_get_tmp_path127_v0__101_49}";
+    __AF_echo_info108_v0__101_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__101_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__102_50="${__AF_get_tmp_path127_v0}";
+    sudo mount ${loop_device}p${root_part} ${__AF_get_tmp_path127_v0__102_50};
     __AS=$?
-    get_tar_file_name__111_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_tar_file_name111_v0__105_25="${__AF_get_tar_file_name111_v0}";
-    local tar_file_name="${__AF_get_tar_file_name111_v0__105_25}"
-    get_tar_file_path__112_v0 "${tar_file_name}";
-    __AF_get_tar_file_path112_v0__106_25="${__AF_get_tar_file_path112_v0}";
-    local tar_file_path="${__AF_get_tar_file_path112_v0__106_25}"
-    extract_rootfs__188_v0 "${tar_file_path}";
-    __AF_extract_rootfs188_v0__107_5="$__AF_extract_rootfs188_v0";
-    echo "$__AF_extract_rootfs188_v0__107_5" > /dev/null 2>&1
-    mount_chroot__168_v0 ;
-    __AF_mount_chroot168_v0__108_5="$__AF_mount_chroot168_v0";
-    echo "$__AF_mount_chroot168_v0__108_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__110_25="${__AF_get_tmp_path110_v0}";
-    sudo mkdir ${__AF_get_tmp_path110_v0__110_25}/boot/efi;
+    get_tar_file_name__128_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_tar_file_name128_v0__103_25="${__AF_get_tar_file_name128_v0}";
+    local tar_file_name="${__AF_get_tar_file_name128_v0__103_25}"
+    get_tar_file_path__129_v0 "${tar_file_name}";
+    __AF_get_tar_file_path129_v0__104_25="${__AF_get_tar_file_path129_v0}";
+    local tar_file_path="${__AF_get_tar_file_path129_v0__104_25}"
+    extract_rootfs__207_v0 "${tar_file_path}";
+    __AF_extract_rootfs207_v0__105_5="$__AF_extract_rootfs207_v0";
+    echo "$__AF_extract_rootfs207_v0__105_5" > /dev/null 2>&1
+    mount_chroot__187_v0 ;
+    __AF_mount_chroot187_v0__106_5="$__AF_mount_chroot187_v0";
+    echo "$__AF_mount_chroot187_v0__106_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__108_24="${__AF_get_tmp_path127_v0}";
+    sudo mkdir ${__AF_get_tmp_path127_v0__108_24}/boot/efi;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__111_49="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__111_49}/boot/efi";
-    __AF_echo_info91_v0__111_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__111_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__112_51="${__AF_get_tmp_path110_v0}";
-    sudo mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path110_v0__112_51}/boot/efi;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__109_49="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path127_v0__109_49}/boot/efi";
+    __AF_echo_info108_v0__109_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__109_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__110_50="${__AF_get_tmp_path127_v0}";
+    sudo mount ${loop_device}p${uefi_part} ${__AF_get_tmp_path127_v0__110_50}/boot/efi;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__113_50="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/EFI ${__AF_get_tmp_path110_v0__113_50}/boot/efi 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__111_49="${__AF_get_tmp_path127_v0}";
+    sudo cp -r ${device_config_path}/EFI ${__AF_get_tmp_path127_v0__111_49}/boot/efi 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__115_30="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy grup to ${__AF_get_tmp_path110_v0__115_30}/boot";
-    __AF_echo_info91_v0__115_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__115_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__116_51="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/grub ${__AF_get_tmp_path110_v0__116_51}/boot 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__113_30="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "copy grup to ${__AF_get_tmp_path127_v0__113_30}/boot";
+    __AF_echo_info108_v0__113_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__113_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__114_50="${__AF_get_tmp_path127_v0}";
+    sudo cp -r ${device_config_path}/grub ${__AF_get_tmp_path127_v0__114_50}/boot 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__118_32="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy kernel to ${__AF_get_tmp_path110_v0__118_32}/boot";
-    __AF_echo_info91_v0__118_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__118_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__119_55="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/kernel/* ${__AF_get_tmp_path110_v0__119_55}/boot 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__116_32="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "copy kernel to ${__AF_get_tmp_path127_v0__116_32}/boot";
+    __AF_echo_info108_v0__116_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__116_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__117_54="${__AF_get_tmp_path127_v0}";
+    sudo cp -r ${device_config_path}/kernel/* ${__AF_get_tmp_path127_v0__117_54}/boot 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__120_25="${__AF_get_tmp_path110_v0}";
-    sudo mkdir ${__AF_get_tmp_path110_v0__120_25}/lib/modules;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__118_24="${__AF_get_tmp_path127_v0}";
+    sudo mkdir ${__AF_get_tmp_path127_v0__118_24}/lib/modules;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__121_56="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/modules/* ${__AF_get_tmp_path110_v0__121_56}/lib/modules 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__119_55="${__AF_get_tmp_path127_v0}";
+    sudo cp -r ${device_config_path}/modules/* ${__AF_get_tmp_path127_v0__119_55}/lib/modules 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__123_40="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy sources.list.d to ${__AF_get_tmp_path110_v0__123_40}/etc/apt/sources.list.d";
-    __AF_echo_info91_v0__123_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__123_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__124_63="${__AF_get_tmp_path110_v0}";
-    sudo cp -r ${device_config_path}/sources.list.d/* ${__AF_get_tmp_path110_v0__124_63}/etc/apt/sources.list.d 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__121_40="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "copy sources.list.d to ${__AF_get_tmp_path127_v0__121_40}/etc/apt/sources.list.d";
+    __AF_echo_info108_v0__121_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__121_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__122_62="${__AF_get_tmp_path127_v0}";
+    sudo cp -r ${device_config_path}/sources.list.d/* ${__AF_get_tmp_path127_v0__122_62}/etc/apt/sources.list.d 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__126_40="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "copy extra packages to ${__AF_get_tmp_path110_v0__126_40}/tmp";
-    __AF_echo_info91_v0__126_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__126_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__127_58="${__AF_get_tmp_path110_v0}";
-    cp -r ${device_config_path}/extra-packages/* ${__AF_get_tmp_path110_v0__127_58}/tmp || true;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__124_40="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "copy extra packages to ${__AF_get_tmp_path127_v0__124_40}/tmp";
+    __AF_echo_info108_v0__124_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__124_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__125_57="${__AF_get_tmp_path127_v0}";
+    cp -r ${device_config_path}/extra-packages/* ${__AF_get_tmp_path127_v0__125_57}/tmp || true;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__128_48="${__AF_get_tmp_path110_v0}";
-    echo_info__91_v0 "installing extra packages from ${__AF_get_tmp_path110_v0__128_48}/tmp";
-    __AF_echo_info91_v0__128_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__128_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__129_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__129_27}" "cd /tmp && apt install -y ./*deb";
-    __AF_run_command_in_chroot170_v0__129_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__129_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__126_48="${__AF_get_tmp_path127_v0}";
+    echo_info__108_v0 "installing extra packages from ${__AF_get_tmp_path127_v0__126_48}/tmp";
+    __AF_echo_info108_v0__126_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__126_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__127_27="${__AF_get_tmp_path127_v0}";
+    run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__127_27}" "cd /tmp && apt install -y ./*deb";
+    __AF_run_command_in_chroot189_v0__127_5="$__AF_run_command_in_chroot189_v0";
+    echo "$__AF_run_command_in_chroot189_v0__127_5" > /dev/null 2>&1
     if [ $([ "_${device}" != "_rock-5b" ]; echo $?) != 0 ]; then
         # 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
         if [ 1 != 0 ]; then
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__134_33="${__AF_get_tmp_path110_v0}";
-            sudo mkdir ${__AF_get_tmp_path110_v0__134_33}/config;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__132_32="${__AF_get_tmp_path127_v0}";
+            sudo mkdir ${__AF_get_tmp_path127_v0__132_32}/config;
+            __AS=$?
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__133_60="${__AF_get_tmp_path127_v0}";
+            sudo mount ${loop_device}p${config_part} ${__AF_get_tmp_path127_v0__133_60}/config;
             __AS=$?
             # rock 5b 用 github 做 apt 仓库，需要代理
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__137_92="${__AF_get_tmp_path110_v0}";
-            echo 'Acquire::https::Proxy "http://10.20.42.187:7890";' | sudo tee ${__AF_get_tmp_path110_v0__137_92}/etc/apt/apt.conf > /dev/null;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__136_91="${__AF_get_tmp_path127_v0}";
+            echo 'Acquire::https::Proxy "http://10.20.42.187:7890";' | sudo tee ${__AF_get_tmp_path127_v0__136_91}/etc/apt/apt.conf > /dev/null;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__138_94="${__AF_get_tmp_path110_v0}";
-            echo 'Acquire::http::Proxy "http://10.20.42.187:7890";' | sudo tee -a ${__AF_get_tmp_path110_v0__138_94}/etc/apt/apt.conf > /dev/null;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__137_93="${__AF_get_tmp_path127_v0}";
+            echo 'Acquire::http::Proxy "http://10.20.42.187:7890";' | sudo tee -a ${__AF_get_tmp_path127_v0__137_93}/etc/apt/apt.conf > /dev/null;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__139_35="${__AF_get_tmp_path110_v0}";
-            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__139_35}" "apt update";
-            __AF_run_command_in_chroot170_v0__139_13="$__AF_run_command_in_chroot170_v0";
-            echo "$__AF_run_command_in_chroot170_v0__139_13" > /dev/null 2>&1
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__138_35="${__AF_get_tmp_path127_v0}";
+            run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__138_35}" "apt update";
+            __AF_run_command_in_chroot189_v0__138_13="$__AF_run_command_in_chroot189_v0";
+            echo "$__AF_run_command_in_chroot189_v0__138_13" > /dev/null 2>&1
             # debian dkms 加了 /etc/kernel 下的内容
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__141_33="${__AF_get_tmp_path110_v0}";
-            curl -L -o ${__AF_get_tmp_path110_v0__141_33}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb;
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__140_32="${__AF_get_tmp_path127_v0}";
+            curl -L -o ${__AF_get_tmp_path127_v0__140_32}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb;
             __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__142_35="${__AF_get_tmp_path110_v0}";
-            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__142_35}" "apt reinstall -y --allow-downgrades /tmp/dkms.deb";
-            __AF_run_command_in_chroot170_v0__142_13="$__AF_run_command_in_chroot170_v0";
-            echo "$__AF_run_command_in_chroot170_v0__142_13" > /dev/null 2>&1
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__143_35="${__AF_get_tmp_path110_v0}";
-            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__143_35}" "apt install -y \\
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__141_35="${__AF_get_tmp_path127_v0}";
+            run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__141_35}" "apt reinstall -y --allow-downgrades /tmp/dkms.deb";
+            __AF_run_command_in_chroot189_v0__141_13="$__AF_run_command_in_chroot189_v0";
+            echo "$__AF_run_command_in_chroot189_v0__141_13" > /dev/null 2>&1
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__142_35="${__AF_get_tmp_path127_v0}";
+            run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__142_35}" "apt install -y \\
                 radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
                 rfkill \\
                 u-boot-tools efibootmgr systemd-boot apt-listchanges \\
                 pipewire-audio avahi-daemon";
-            __AF_run_command_in_chroot170_v0__143_13="$__AF_run_command_in_chroot170_v0";
-            echo "$__AF_run_command_in_chroot170_v0__143_13" > /dev/null 2>&1
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__148_35="${__AF_get_tmp_path110_v0}";
-            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__148_35}" "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b";
-            __AF_run_command_in_chroot170_v0__148_13="$__AF_run_command_in_chroot170_v0";
-            echo "$__AF_run_command_in_chroot170_v0__148_13" > /dev/null 2>&1
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__149_35="${__AF_get_tmp_path110_v0}";
-            run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__149_35}" "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b";
-            __AF_run_command_in_chroot170_v0__149_13="$__AF_run_command_in_chroot170_v0";
-            echo "$__AF_run_command_in_chroot170_v0__149_13" > /dev/null 2>&1
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__151_61="${__AF_get_tmp_path110_v0}";
-            sudo mount ${loop_device}p${config_part} ${__AF_get_tmp_path110_v0__151_61}/config;
-            __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__152_40="${__AF_get_tmp_path110_v0}";
-            echo_info__91_v0 "copy config to ${__AF_get_tmp_path110_v0__152_40}/config";
-            __AF_echo_info91_v0__152_13="$__AF_echo_info91_v0";
-            echo "$__AF_echo_info91_v0__152_13" > /dev/null 2>&1
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__153_63="${__AF_get_tmp_path110_v0}";
-            sudo cp -r ${device_config_path}/config/* ${__AF_get_tmp_path110_v0__153_63}/config;
-            __AS=$?
-            get_tmp_path__110_v0 ;
-            __AF_get_tmp_path110_v0__154_30="${__AF_get_tmp_path110_v0}";
-            sudo rm ${__AF_get_tmp_path110_v0__154_30}/etc/apt/apt.conf;
+            __AF_run_command_in_chroot189_v0__142_13="$__AF_run_command_in_chroot189_v0";
+            echo "$__AF_run_command_in_chroot189_v0__142_13" > /dev/null 2>&1
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__147_35="${__AF_get_tmp_path127_v0}";
+            run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__147_35}" "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b";
+            __AF_run_command_in_chroot189_v0__147_13="$__AF_run_command_in_chroot189_v0";
+            echo "$__AF_run_command_in_chroot189_v0__147_13" > /dev/null 2>&1
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__148_35="${__AF_get_tmp_path127_v0}";
+            run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__148_35}" "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b";
+            __AF_run_command_in_chroot189_v0__148_13="$__AF_run_command_in_chroot189_v0";
+            echo "$__AF_run_command_in_chroot189_v0__148_13" > /dev/null 2>&1
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__150_29="${__AF_get_tmp_path127_v0}";
+            sudo rm ${__AF_get_tmp_path127_v0__150_29}/etc/apt/apt.conf;
             __AS=$?
 fi
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__157_31="${__AF_get_tmp_path110_v0}";
-        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__157_31}" "cd /usr/lib/u-boot/${device} && ./setup.sh update_bootloader ${loop_device} rk3588";
-        __AF_run_command_in_chroot170_v0__157_9="$__AF_run_command_in_chroot170_v0";
-        echo "$__AF_run_command_in_chroot170_v0__157_9" > /dev/null 2>&1
-        # rock5b 把一些内核模块用xz压缩了
-        # run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__153_31="${__AF_get_tmp_path127_v0}";
+        run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__153_31}" "cd /usr/lib/u-boot/${device} && ./setup.sh update_bootloader ${loop_device} rk3588";
+        __AF_run_command_in_chroot189_v0__153_9="$__AF_run_command_in_chroot189_v0";
+        echo "$__AF_run_command_in_chroot189_v0__153_9" > /dev/null 2>&1
 fi
-    echo_info__91_v0 "generate /etc/fstab";
-    __AF_echo_info91_v0__163_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__163_5" > /dev/null 2>&1
-    __AMBER_VAL_7=$(sudo blkid -s UUID -o value ${loop_device}p${root_part});
+    echo_info__108_v0 "generate /etc/fstab";
+    __AF_echo_info108_v0__156_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__156_5" > /dev/null 2>&1
+    __AMBER_VAL_12=$(sudo blkid -s UUID -o value ${loop_device}p${root_part});
     __AS=$?;
-    local root_part_uuid="${__AMBER_VAL_7}"
-    echo_info__91_v0 "root uuid: ${root_part_uuid}";
-    __AF_echo_info91_v0__165_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__165_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__166_114="${__AF_get_tmp_path110_v0}";
-    echo "UUID=${root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1" | sudo tee ${__AF_get_tmp_path110_v0__166_114}/etc/fstab > /dev/null;
+    local root_part_uuid="${__AMBER_VAL_12}"
+    echo_info__108_v0 "root uuid: ${root_part_uuid}";
+    __AF_echo_info108_v0__158_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__158_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__159_113="${__AF_get_tmp_path127_v0}";
+    echo "UUID=${root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1" | sudo tee ${__AF_get_tmp_path127_v0__159_113}/etc/fstab > /dev/null;
     __AS=$?
     if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        __AMBER_VAL_8=$(sudo blkid -s UUID -o value ${loop_device}p${config_part});
+        __AMBER_VAL_13=$(sudo blkid -s UUID -o value ${loop_device}p${config_part});
         __AS=$?;
-        local config_part_uuid="${__AMBER_VAL_8}"
-        echo_info__91_v0 "config uuid: ${config_part_uuid}";
-        __AF_echo_info91_v0__169_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__169_9" > /dev/null 2>&1
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__170_111="${__AF_get_tmp_path110_v0}";
-        echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__170_111}/etc/fstab > /dev/null;
+        local config_part_uuid="${__AMBER_VAL_13}"
+        echo_info__108_v0 "config uuid: ${config_part_uuid}";
+        __AF_echo_info108_v0__162_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__162_9" > /dev/null 2>&1
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__163_110="${__AF_get_tmp_path127_v0}";
+        echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path127_v0__163_110}/etc/fstab > /dev/null;
         __AS=$?
 fi
-    __AMBER_VAL_9=$(sudo blkid -s UUID -o value ${loop_device}p${uefi_part});
+    __AMBER_VAL_14=$(sudo blkid -s UUID -o value ${loop_device}p${uefi_part});
     __AS=$?;
-    local uefi_part_uuid="${__AMBER_VAL_9}"
-    echo_info__91_v0 "efi uuid: ${uefi_part_uuid}";
-    __AF_echo_info91_v0__173_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__173_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__174_107="${__AF_get_tmp_path110_v0}";
-    echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path110_v0__174_107}/etc/fstab > /dev/null;
+    local uefi_part_uuid="${__AMBER_VAL_14}"
+    echo_info__108_v0 "efi uuid: ${uefi_part_uuid}";
+    __AF_echo_info108_v0__166_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__166_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__167_106="${__AF_get_tmp_path127_v0}";
+    echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path127_v0__167_106}/etc/fstab > /dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__175_61="${__AF_get_tmp_path110_v0}";
-    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__175_61}/boot/grub/grub.cfg 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__168_60="${__AF_get_tmp_path127_v0}";
+    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path127_v0__168_60}/boot/grub/grub.cfg 2>/dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__176_61="${__AF_get_tmp_path110_v0}";
-    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path110_v0__176_61}/boot/efi/EFI/boot/grub.cfg 2>/dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__169_60="${__AF_get_tmp_path127_v0}";
+    sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path127_v0__169_60}/boot/efi/EFI/boot/grub.cfg 2>/dev/null;
     __AS=$?
     # rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__179_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__179_27}" "sed -i 's/UUID=[0-9a-fA-F]\\{8\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{12\\}/UUID=${root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null";
-    __AF_run_command_in_chroot170_v0__179_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__179_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__172_27="${__AF_get_tmp_path127_v0}";
+    run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__172_27}" "sed -i 's/UUID=[0-9a-fA-F]\\{8\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{12\\}/UUID=${root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null";
+    __AF_run_command_in_chroot189_v0__172_5="$__AF_run_command_in_chroot189_v0";
+    echo "$__AF_run_command_in_chroot189_v0__172_5" > /dev/null 2>&1
     # 添加自动扩容，配合 /etc/fstab x-systemd.growfs
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__182_28="${__AF_get_tmp_path110_v0}";
-    sudo mkdir -p ${__AF_get_tmp_path110_v0__182_28}/etc/repart.d;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__175_27="${__AF_get_tmp_path127_v0}";
+    sudo mkdir -p ${__AF_get_tmp_path127_v0__175_27}/etc/repart.d;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__183_46="${__AF_get_tmp_path110_v0}";
-    echo "[Partition]" | sudo tee ${__AF_get_tmp_path110_v0__183_46}/etc/repart.d/growroot.conf > /dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__176_45="${__AF_get_tmp_path127_v0}";
+    echo "[Partition]" | sudo tee ${__AF_get_tmp_path127_v0__176_45}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__184_56="${__AF_get_tmp_path110_v0}";
-    echo "Type=linux-generic" | sudo tee -a ${__AF_get_tmp_path110_v0__184_56}/etc/repart.d/growroot.conf > /dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__177_55="${__AF_get_tmp_path127_v0}";
+    echo "Type=linux-generic" | sudo tee -a ${__AF_get_tmp_path127_v0__177_55}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__185_57="${__AF_get_tmp_path110_v0}";
-    echo "GrowFileSystem=true" | sudo tee -a ${__AF_get_tmp_path110_v0__185_57}/etc/repart.d/growroot.conf > /dev/null;
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__178_56="${__AF_get_tmp_path127_v0}";
+    echo "GrowFileSystem=true" | sudo tee -a ${__AF_get_tmp_path127_v0__178_56}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
-    echo_info__91_v0 "set hostname";
-    __AF_echo_info91_v0__187_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__187_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__188_57="${__AF_get_tmp_path110_v0}";
-    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path110_v0__188_57}/etc/hostname > /dev/null;
+    echo_info__108_v0 "set hostname";
+    __AF_echo_info108_v0__180_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__180_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__181_56="${__AF_get_tmp_path127_v0}";
+    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path127_v0__181_56}/etc/hostname > /dev/null;
     __AS=$?
-    echo_info__91_v0 "update-initramfs -u";
-    __AF_echo_info91_v0__190_5="$__AF_echo_info91_v0";
-    echo "$__AF_echo_info91_v0__190_5" > /dev/null 2>&1
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__191_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__191_27}" "update-initramfs -u";
-    __AF_run_command_in_chroot170_v0__191_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__191_5" > /dev/null 2>&1
-    if [ $([ "_${device}" == "_rock-5b" ]; echo $?) != 0 ]; then
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__194_31="${__AF_get_tmp_path110_v0}";
-        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__194_31}" "useradd  -s /bin/bash -m -g users deepin";
-        __AF_run_command_in_chroot170_v0__194_9="$__AF_run_command_in_chroot170_v0";
-        echo "$__AF_run_command_in_chroot170_v0__194_9" > /dev/null 2>&1
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__195_31="${__AF_get_tmp_path110_v0}";
-        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__195_31}" "usermod -a -G sudo deepin";
-        __AF_run_command_in_chroot170_v0__195_9="$__AF_run_command_in_chroot170_v0";
-        echo "$__AF_run_command_in_chroot170_v0__195_9" > /dev/null 2>&1
-        get_tmp_path__110_v0 ;
-        __AF_get_tmp_path110_v0__196_31="${__AF_get_tmp_path110_v0}";
-        run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__196_31}" "echo deepin:deepin | chpasswd";
-        __AF_run_command_in_chroot170_v0__196_9="$__AF_run_command_in_chroot170_v0";
-        echo "$__AF_run_command_in_chroot170_v0__196_9" > /dev/null 2>&1
+    echo_info__108_v0 "update-initramfs -u";
+    __AF_echo_info108_v0__183_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__183_5" > /dev/null 2>&1
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__184_27="${__AF_get_tmp_path127_v0}";
+    run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__184_27}" "update-initramfs -u";
+    __AF_run_command_in_chroot189_v0__184_5="$__AF_run_command_in_chroot189_v0";
+    echo "$__AF_run_command_in_chroot189_v0__184_5" > /dev/null 2>&1
+    if [ $([ "_${device}" != "_rock-5b" ]; echo $?) != 0 ]; then
+        # rock5b 把一些内核模块用xz压缩了，不知道为啥不能正确解压，这里将ko解压
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__188_31="${__AF_get_tmp_path127_v0}";
+        run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__188_31}" "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d {} +";
+        __AF_run_command_in_chroot189_v0__188_9="$__AF_run_command_in_chroot189_v0";
+        echo "$__AF_run_command_in_chroot189_v0__188_9" > /dev/null 2>&1
 fi
-    get_tmp_path__110_v0 ;
-    __AF_get_tmp_path110_v0__198_27="${__AF_get_tmp_path110_v0}";
-    run_command_in_chroot__170_v0 "${__AF_get_tmp_path110_v0__198_27}" "echo root:deepin | chpasswd";
-    __AF_run_command_in_chroot170_v0__198_5="$__AF_run_command_in_chroot170_v0";
-    echo "$__AF_run_command_in_chroot170_v0__198_5" > /dev/null 2>&1
-    umount_chroot__169_v0 ;
-    __AF_umount_chroot169_v0__200_5="$__AF_umount_chroot169_v0";
-    echo "$__AF_umount_chroot169_v0__200_5" > /dev/null 2>&1
+    if [ $([ "_${device}" == "_rock-5b" ]; echo $?) != 0 ]; then
+        if [ $([ "_${base_type}" != "_desktop" ]; echo $?) != 0 ]; then
+            # 配置 deepin-installer
+            get_config_path__132_v0 ;
+            __AF_get_config_path132_v0__194_37="${__AF_get_config_path132_v0}";
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__194_96="${__AF_get_tmp_path127_v0}";
+            sudo install -D ${__AF_get_config_path132_v0__194_37}/deepin-installer/deepin-installer.conf ${__AF_get_tmp_path127_v0__194_96}/etc/deepin-installer/deepin-installer.conf;
+            __AS=$?
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__195_63="${__AF_get_tmp_path127_v0}";
+            echo -n 'apt_source_deb="' | sudo tee -a ${__AF_get_tmp_path127_v0__195_63}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AS=$?
+            # TODO 循环多个源拼接
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__197_60="${__AF_get_tmp_path127_v0}";
+            echo -n "${sources}\\n" | sudo tee -a ${__AF_get_tmp_path127_v0__197_60}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AS=$?
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__198_47="${__AF_get_tmp_path127_v0}";
+            echo -n '"' | sudo tee -a ${__AF_get_tmp_path127_v0__198_47}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AS=$?
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__200_71="${__AF_get_tmp_path127_v0}";
+            sudo ln -s ../deepin-installer-first-boot.service ${__AF_get_tmp_path127_v0__200_71}/usr/lib/systemd/system/multi-user.target.wants/deepin-installer-first-boot.service;
+            __AS=$?
+            get_tmp_path__127_v0 ;
+            __AF_get_tmp_path127_v0__201_29="${__AF_get_tmp_path127_v0}";
+            sudo rm ${__AF_get_tmp_path127_v0__201_29}/usr/lib/systemd/system/deepin-installer.service;
+            __AS=$?
+fi
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__203_31="${__AF_get_tmp_path127_v0}";
+        run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__203_31}" "useradd  -s /bin/bash -m -g users deepin";
+        __AF_run_command_in_chroot189_v0__203_9="$__AF_run_command_in_chroot189_v0";
+        echo "$__AF_run_command_in_chroot189_v0__203_9" > /dev/null 2>&1
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__204_31="${__AF_get_tmp_path127_v0}";
+        run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__204_31}" "usermod -a -G sudo deepin";
+        __AF_run_command_in_chroot189_v0__204_9="$__AF_run_command_in_chroot189_v0";
+        echo "$__AF_run_command_in_chroot189_v0__204_9" > /dev/null 2>&1
+        get_tmp_path__127_v0 ;
+        __AF_get_tmp_path127_v0__205_31="${__AF_get_tmp_path127_v0}";
+        run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__205_31}" "echo deepin:deepin | chpasswd";
+        __AF_run_command_in_chroot189_v0__205_9="$__AF_run_command_in_chroot189_v0";
+        echo "$__AF_run_command_in_chroot189_v0__205_9" > /dev/null 2>&1
+fi
+    get_tmp_path__127_v0 ;
+    __AF_get_tmp_path127_v0__207_27="${__AF_get_tmp_path127_v0}";
+    run_command_in_chroot__189_v0 "${__AF_get_tmp_path127_v0__207_27}" "echo root:deepin | chpasswd";
+    __AF_run_command_in_chroot189_v0__207_5="$__AF_run_command_in_chroot189_v0";
+    echo "$__AF_run_command_in_chroot189_v0__207_5" > /dev/null 2>&1
+    umount_chroot__188_v0 ;
+    __AF_umount_chroot188_v0__210_5="$__AF_umount_chroot188_v0";
+    echo "$__AF_umount_chroot188_v0__210_5" > /dev/null 2>&1
     sudo e2fsck -p -f ${loop_device}p${root_part} > /dev/null 2>&1;
     __AS=$?
     sudo resize2fs -M ${loop_device}p${root_part} > /dev/null 2>&1;
     __AS=$?
     sudo losetup -D ${loop_device};
     __AS=$?
-    echo_success__92_v0 "output ${image_path} success";
-    __AF_echo_success92_v0__205_5="$__AF_echo_success92_v0";
-    echo "$__AF_echo_success92_v0__205_5" > /dev/null 2>&1
+    echo_success__109_v0 "output ${image_path} success";
+    __AF_echo_success109_v0__215_5="$__AF_echo_success109_v0";
+    echo "$__AF_echo_success109_v0__215_5" > /dev/null 2>&1
 }
-build_cmd__192_v0() {
+build_cmd__211_v0() {
     local build_tag=$1
     local distro_name=$2
     local distro_version=$3
@@ -812,106 +839,103 @@ build_cmd__192_v0() {
     local base_type=$7
     local device=$8
     local image_size=$9
-    get_rootfs_path__137_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_rootfs_path137_v0__10_23="${__AF_get_rootfs_path137_v0}";
-    local rootfs_path="${__AF_get_rootfs_path137_v0__10_23}"
-    dir_exist__0_v0 "${rootfs_path}";
-    __AF_dir_exist0_v0__12_12="$__AF_dir_exist0_v0";
-    if [ $(echo  '!' "$__AF_dir_exist0_v0__12_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        create_rootfs_cache__122_v0 "${distro_name}" "${distro_version}" "${components}" "${arch}" "${sources}" "${base_type}" "${device}";
-        __AF_create_rootfs_cache122_v0__12_36="$__AF_create_rootfs_cache122_v0";
-        echo "$__AF_create_rootfs_cache122_v0__12_36" > /dev/null 2>&1
+    get_rootfs_path__155_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_rootfs_path155_v0__10_23="${__AF_get_rootfs_path155_v0}";
+    local rootfs_path="${__AF_get_rootfs_path155_v0__10_23}"
+    dir_exists__32_v0 "${rootfs_path}";
+    __AF_dir_exists32_v0__12_12="$__AF_dir_exists32_v0";
+    if [ $(echo  '!' "$__AF_dir_exists32_v0__12_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+        create_rootfs_cache__140_v0 "${distro_name}" "${distro_version}" "${components}" "${arch}" "${sources}" "${base_type}" "${device}";
+        __AF_create_rootfs_cache140_v0__12_37="$__AF_create_rootfs_cache140_v0";
+        echo "$__AF_create_rootfs_cache140_v0__12_37" > /dev/null 2>&1
 else
-        echo_info__91_v0 "rootfs is exist";
-        __AF_echo_info91_v0__13_11="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__13_11" > /dev/null 2>&1
+        echo_info__108_v0 "rootfs is exist";
+        __AF_echo_info108_v0__13_11="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__13_11" > /dev/null 2>&1
 fi
-    get_tar_file_name__140_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-    __AF_get_tar_file_name140_v0__15_25="${__AF_get_tar_file_name140_v0}";
-    local tar_file_name="${__AF_get_tar_file_name140_v0__15_25}"
-    get_tar_file_path__141_v0 "${tar_file_name}";
-    __AF_get_tar_file_path141_v0__16_25="${__AF_get_tar_file_path141_v0}";
-    local tar_file_path="${__AF_get_tar_file_path141_v0__16_25}"
-    file_exist__1_v0 "${tar_file_path}";
-    __AF_file_exist1_v0__18_12="$__AF_file_exist1_v0";
-    if [ $(echo  '!' "$__AF_file_exist1_v0__18_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-        echo_info__91_v0 "locale-gen";
-        __AF_echo_info91_v0__19_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__19_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
-        __AF_run_command_in_chroot130_v0__20_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__20_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
-        __AF_run_command_in_chroot130_v0__21_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__21_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "locale-gen";
-        __AF_run_command_in_chroot130_v0__22_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__22_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales";
-        __AF_run_command_in_chroot130_v0__23_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__23_9" > /dev/null 2>&1
-        echo_info__91_v0 "Annotation USERS_GID and USERS_GROUP";
-        __AF_echo_info91_v0__24_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__24_9" > /dev/null 2>&1
-        run_command_in_chroot__130_v0 "${rootfs_path}" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales";
-        __AF_run_command_in_chroot130_v0__25_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__25_9" > /dev/null 2>&1
+    get_tar_file_name__158_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+    __AF_get_tar_file_name158_v0__15_25="${__AF_get_tar_file_name158_v0}";
+    local tar_file_name="${__AF_get_tar_file_name158_v0__15_25}"
+    get_tar_file_path__159_v0 "${tar_file_name}";
+    __AF_get_tar_file_path159_v0__16_25="${__AF_get_tar_file_path159_v0}";
+    local tar_file_path="${__AF_get_tar_file_path159_v0__16_25}"
+    file_exists__33_v0 "${tar_file_path}";
+    __AF_file_exists33_v0__18_12="$__AF_file_exists33_v0";
+    if [ $(echo  '!' "$__AF_file_exists33_v0__18_12" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+        # echo_info("locale-gen")
+        run_command_in_chroot__148_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(zh_CN.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
+        __AF_run_command_in_chroot148_v0__20_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__20_9" > /dev/null 2>&1
+        run_command_in_chroot__148_v0 "${rootfs_path}" "sed -i -E 's/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g' /etc/locale.gen";
+        __AF_run_command_in_chroot148_v0__21_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__21_9" > /dev/null 2>&1
+        run_command_in_chroot__148_v0 "${rootfs_path}" "locale-gen";
+        __AF_run_command_in_chroot148_v0__22_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__22_9" > /dev/null 2>&1
+        run_command_in_chroot__148_v0 "${rootfs_path}" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales";
+        __AF_run_command_in_chroot148_v0__23_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__23_9" > /dev/null 2>&1
+        echo_info__108_v0 "Annotation USERS_GID and USERS_GROUP";
+        __AF_echo_info108_v0__24_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__24_9" > /dev/null 2>&1
+        run_command_in_chroot__148_v0 "${rootfs_path}" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales";
+        __AF_run_command_in_chroot148_v0__25_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__25_9" > /dev/null 2>&1
         # 微软提供的 wsl 启动器会调用adduser,需要将 USERS_GID 和 USERS_GROUP 注释。
-        run_command_in_chroot__130_v0 "${rootfs_path}" "sed -i -e 's/USERS_GID=100/#USERS_GID=100/' -e 's/USERS_GROUP=users/#USERS_GROUP=users/' /etc/adduser.conf";
-        __AF_run_command_in_chroot130_v0__27_9="$__AF_run_command_in_chroot130_v0";
-        echo "$__AF_run_command_in_chroot130_v0__27_9" > /dev/null 2>&1
-        create_rootfs_tar_file__123_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
-        __AF_create_rootfs_tar_file123_v0__28_9="$__AF_create_rootfs_tar_file123_v0";
-        echo "$__AF_create_rootfs_tar_file123_v0__28_9" > /dev/null 2>&1
+        run_command_in_chroot__148_v0 "${rootfs_path}" "sed -i -e 's/USERS_GID=100/#USERS_GID=100/' -e 's/USERS_GROUP=users/#USERS_GROUP=users/' /etc/adduser.conf";
+        __AF_run_command_in_chroot148_v0__27_9="$__AF_run_command_in_chroot148_v0";
+        echo "$__AF_run_command_in_chroot148_v0__27_9" > /dev/null 2>&1
+        create_rootfs_tar_file__141_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}";
+        __AF_create_rootfs_tar_file141_v0__28_9="$__AF_create_rootfs_tar_file141_v0";
+        echo "$__AF_create_rootfs_tar_file141_v0__28_9" > /dev/null 2>&1
 else
-        echo_info__91_v0 "${tar_file_name} is exist";
-        __AF_echo_info91_v0__30_9="$__AF_echo_info91_v0";
-        echo "$__AF_echo_info91_v0__30_9" > /dev/null 2>&1
+        echo_info__108_v0 "${tar_file_name} is exist";
+        __AF_echo_info108_v0__30_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__30_9" > /dev/null 2>&1
 fi
     if [ $([ "_${build_tag}" != "_board" ]; echo $?) != 0 ]; then
-        create_image__190_v0 "${distro_name}" "${distro_version}" "${arch}" "${base_type}" "${device}" "${image_size}";
-        __AF_create_image190_v0__34_9="$__AF_create_image190_v0";
-        echo "$__AF_create_image190_v0__34_9" > /dev/null 2>&1
+        create_image__209_v0 "${distro_name}" "${distro_version}" "${arch}" "${sources}" "${base_type}" "${device}" "${image_size}";
+        __AF_create_image209_v0__34_9="$__AF_create_image209_v0";
+        echo "$__AF_create_image209_v0__34_9" > /dev/null 2>&1
 fi
 }
-__AMBER_VAL_10=$(pwd);
+__AMBER_VAL_15=$(pwd);
 __AS=$?;
-__2_pwd="${__AMBER_VAL_10}"
-get_cache_path__196_v0() {
-    __AF_get_cache_path196_v0="${__2_pwd}/cache";
+__2_pwd="${__AMBER_VAL_15}"
+get_cache_path__215_v0() {
+    __AF_get_cache_path215_v0="${__2_pwd}/cache";
     return 0
 }
-get_output_path__197_v0() {
-    __AF_get_output_path197_v0="${__2_pwd}/output";
+get_output_path__216_v0() {
+    __AF_get_output_path216_v0="${__2_pwd}/output";
     return 0
 }
-get_tmp_path__201_v0() {
-    get_cache_path__196_v0 ;
-    __AF_get_cache_path196_v0__26_14="${__AF_get_cache_path196_v0}";
-    __AF_get_tmp_path201_v0="${__AF_get_cache_path196_v0__26_14}/tmp";
+get_tmp_path__220_v0() {
+    get_cache_path__215_v0 ;
+    __AF_get_cache_path215_v0__26_14="${__AF_get_cache_path215_v0}";
+    __AF_get_tmp_path220_v0="${__AF_get_cache_path215_v0__26_14}/tmp";
     return 0
 }
-check_dotfiles__207_v0() {
-    get_output_path__197_v0 ;
-    __AF_get_output_path197_v0__50_21="${__AF_get_output_path197_v0}";
-    get_cache_path__196_v0 ;
-    __AF_get_cache_path196_v0__50_40="${__AF_get_cache_path196_v0}";
-    get_tmp_path__201_v0 ;
-    __AF_get_tmp_path201_v0__50_57="${__AF_get_tmp_path201_v0}";
-    __AMBER_ARRAY_5=("${__AF_get_output_path197_v0__50_21}" "${__AF_get_cache_path196_v0__50_40}" "${__AF_get_tmp_path201_v0__50_57}");
-    local dir_list=("${__AMBER_ARRAY_5[@]}")
-    for dir in "${dir_list[@]}"
-do
-        dir_exist__0_v0 "${dir}";
-        __AF_dir_exist0_v0__52_16="$__AF_dir_exist0_v0";
-        if [ $(echo  '!' "$__AF_dir_exist0_v0__52_16" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            create_dir__6_v0 "${dir}";
-            __AF_create_dir6_v0__52_32="$__AF_create_dir6_v0";
-            echo "$__AF_create_dir6_v0__52_32" > /dev/null 2>&1
+check_dotfiles__227_v0() {
+    get_output_path__216_v0 ;
+    __AF_get_output_path216_v0__54_21="${__AF_get_output_path216_v0}";
+    get_cache_path__215_v0 ;
+    __AF_get_cache_path215_v0__54_40="${__AF_get_cache_path215_v0}";
+    get_tmp_path__220_v0 ;
+    __AF_get_tmp_path220_v0__54_57="${__AF_get_tmp_path220_v0}";
+    __AMBER_ARRAY_16=("${__AF_get_output_path216_v0__54_21}" "${__AF_get_cache_path215_v0__54_40}" "${__AF_get_tmp_path220_v0__54_57}");
+    local dir_list=("${__AMBER_ARRAY_16[@]}")
+    for dir in "${dir_list[@]}"; do
+        dir_exists__32_v0 "${dir}";
+        __AF_dir_exists32_v0__56_16="$__AF_dir_exists32_v0";
+        if [ $(echo  '!' "$__AF_dir_exists32_v0__56_16" | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
+            dir_create__38_v0 "${dir}";
+            __AF_dir_create38_v0__56_33="$__AF_dir_create38_v0";
+            echo "$__AF_dir_create38_v0__56_33" > /dev/null 2>&1
 fi
 done
 }
-args=("$0" "$@")
+declare -r _args=("$0" "$@")
     distro_name=""
     distro_version=""
     components=""
@@ -920,37 +944,36 @@ args=("$0" "$@")
     device=""
     base_type="minimal"
     image_size="0"
-    command="${args[1]}"
-    build_tag="${args[2]}"
+    command="${_args[1]}"
+    build_tag="${_args[2]}"
     # board rootimg
     i=0;
-for arg in "${args[@]}"
-do
+for arg in "${_args[@]}"; do
         if [ $(echo $([ "_${arg}" != "_--name" ]; echo $?) '||' $([ "_${arg}" != "_-n" ]; echo $?) | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            distro_name="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            distro_name="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $(echo $([ "_${arg}" != "_--distro" ]; echo $?) '||' $([ "_${arg}" != "_-d" ]; echo $?) | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            distro_version="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            distro_version="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $(echo $([ "_${arg}" != "_--components" ]; echo $?) '||' $([ "_${arg}" != "_-c" ]; echo $?) | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            components="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            components="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $(echo $([ "_${arg}" != "_--arch" ]; echo $?) '||' $([ "_${arg}" != "_-a" ]; echo $?) | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            arch="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            arch="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $(echo $([ "_${arg}" != "_--sources" ]; echo $?) '||' $([ "_${arg}" != "_-s" ]; echo $?) | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
-            sources="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            sources="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $([ "_${arg}" != "_--base-type" ]; echo $?) != 0 ]; then
-            base_type="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            base_type="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $([ "_${arg}" != "_--device" ]; echo $?) != 0 ]; then
-            device="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            device="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 elif [ $([ "_${arg}" != "_--image-size" ]; echo $?) != 0 ]; then
-            image_size="${args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
+            image_size="${_args[$(echo ${i} '+' 1 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//')]}"
 fi
-        (( i++ )) || true
+    (( i++ )) || true
 done
     # 检查配置目录
-    check_dotfiles__207_v0 ;
-    __AF_check_dotfiles207_v0__47_5="$__AF_check_dotfiles207_v0";
-    echo "$__AF_check_dotfiles207_v0__47_5" > /dev/null 2>&1
+    check_dotfiles__227_v0 ;
+    __AF_check_dotfiles227_v0__47_5="$__AF_check_dotfiles227_v0";
+    echo "$__AF_check_dotfiles227_v0__47_5" > /dev/null 2>&1
     if [ $([ "_${command}" != "_build" ]; echo $?) != 0 ]; then
-        build_cmd__192_v0 "${build_tag}" "${distro_name}" "${distro_version}" "${components}" "${arch}" "${sources}" "${base_type}" "${device}" "${image_size}";
-        __AF_build_cmd192_v0__51_13="$__AF_build_cmd192_v0";
-        echo "$__AF_build_cmd192_v0__51_13" > /dev/null 2>&1
+        build_cmd__211_v0 "${build_tag}" "${distro_name}" "${distro_version}" "${components}" "${arch}" "${sources}" "${base_type}" "${device}" "${image_size}";
+        __AF_build_cmd211_v0__51_13="$__AF_build_cmd211_v0";
+        echo "$__AF_build_cmd211_v0__51_13" > /dev/null 2>&1
 fi

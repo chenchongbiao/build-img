@@ -1,15 +1,14 @@
-import { echo_info, error, echo_success } from "std/env"
-import { ceil } from "std/math"
-import { parse } from "std/text"
+import { echo_info, echo_error, echo_success } from "std/env"
+import { math_ceil } from "std/math"
 
-import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name } from "../utils/file.ab"
+import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name, get_config_path } from "../utils/file.ab"
 import { umount_chroot, mount_chroot, run_command_in_chroot } from "./chroot.ab"
 import { extract_rootfs } from "./rootfs.ab"
 
 #[allow_absurd_cast]
-pub fun create_image(distro_name, distro_version, arch, base_type, device, image_size) {
+pub fun create_image(distro_name, distro_version, arch, sources, base_type, device, image_size) {
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
-    let rootfs_size = unsafe $sudo du --apparent-size -sm {rootfs_path} | cut -f1$ as Num
+    let rootfs_size = trust $sudo du --apparent-size -sm {rootfs_path} | cut -f1$ as Num
     echo_info("current rootfs size: {rootfs_size} MiB")
 
     let image_size_int = image_size as Num
@@ -26,17 +25,17 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
     // 再进行扩展，生成镜像的大小
     let sdsize = fixed_image_size
     if base_type == "minimal" {
-        // sdsize = unsafe $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
-        sdsize = ceil((fixed_image_size * 1.3 / 4) * 4)
+        // sdsize = trust $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
+        sdsize = math_ceil((fixed_image_size * 1.3 / 4) * 4)
     } else {
         // 安装桌面, 需要更大的空间
-        sdsize = ceil((fixed_image_size * 1.35 / 4) * 4)
+        sdsize = math_ceil((fixed_image_size * 1.35 / 4) * 4)
     }
     echo_info("set image size: {sdsize} MIB")
 
     let image_path = get_image_path(distro_name, distro_version, device, arch, base_type)
     $dd if=/dev/zero of={image_path} bs=1M count={sdsize}$ failed {
-        error("dd image error")
+        echo_error("dd image error")
     }
 
     let next = 1
@@ -62,30 +61,29 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
 		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\";\
 		echo c; echo {root_part}; echo root; \
 		echo w; echo y) | gdisk {image_path}$ failed {
-            error("create partition table error")
+            echo_error("create partition table error")
         }
 
         // 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
-        // unsafe $sudo parted {image_path} set {uefi_part} legacy_boot on $
-        unsafe $sudo parted {image_path} set {root_part} legacy_boot on $
+        trust $sudo parted {image_path} set {root_part} legacy_boot on $
     } else {
         $(echo n; echo {uefi_part}; echo \"\"; echo +{uefi_size}M;  echo ef00; \
 		echo c; echo efi; \
 		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\"; \
 		echo c; echo {root_part}; echo root; \
 		echo w; echo y) | gdisk {image_path}$ failed {
-            error("create partition table error")
+            echo_error("create partition table error")
         }
     }
 
     echo_info("losetup {image_path}")
     let loop_device = $sudo losetup -Pf --show {image_path}$ failed {
-        error("losetup -Pf --show {image_path} error")
+        echo_error("losetup -Pf --show {image_path} error")
     }
 
     let device_config_path = get_device_config_path(arch, device)
 
-    unsafe {
+    trust {
         // 设置这些文件系统的标签。dosfslabel 是用来设置vfat（FAT）文件系统的标签，e2label 是用来设置ext2/ext3/ext4文件系统的标签
         $sudo mkfs.vfat -F32 {loop_device}p{uefi_part}$
         $sudo dosfslabel {loop_device}p{uefi_part} efi$
@@ -101,44 +99,45 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
 
     umount_chroot()
     echo_info("mount {loop_device}p{root_part} {get_tmp_path()}")
-    unsafe $sudo mount {loop_device}p{root_part} {get_tmp_path()}$
+    trust $sudo mount {loop_device}p{root_part} {get_tmp_path()}$
     let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
     let tar_file_path = get_tar_file_path(tar_file_name)
     extract_rootfs(tar_file_path)
     mount_chroot()
 
-    unsafe $sudo mkdir {get_tmp_path()}/boot/efi$
+    trust $sudo mkdir {get_tmp_path()}/boot/efi$
     echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
-    unsafe $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
-    unsafe $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
+    trust $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
+    trust $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
 
     echo_info("copy grup to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
+    trust $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
 
     echo_info("copy kernel to {get_tmp_path()}/boot")
-    unsafe $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
-    unsafe $sudo mkdir {get_tmp_path()}/lib/modules$
-    unsafe $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
+    trust $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
+    trust $sudo mkdir {get_tmp_path()}/lib/modules$
+    trust $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
 
     echo_info("copy sources.list.d to {get_tmp_path()}/etc/apt/sources.list.d")
-    unsafe $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
+    trust $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
 
     echo_info("copy extra packages to {get_tmp_path()}/tmp")
-    unsafe $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp || true$
+    trust $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp || true$
     echo_info("installing extra packages from {get_tmp_path()}/tmp")
     run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb")
 
     if device == "rock-5b" {
         // 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
         if true {
-            unsafe $sudo mkdir {get_tmp_path()}/config$
+            trust $sudo mkdir {get_tmp_path()}/config$
+            trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
 
             // rock 5b 用 github 做 apt 仓库，需要代理
-            unsafe $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
-            unsafe $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+            trust $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+            trust $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
             run_command_in_chroot(get_tmp_path(), "apt update")
             // debian dkms 加了 /etc/kernel 下的内容
-            unsafe $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
+            trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
             run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
             run_command_in_chroot(get_tmp_path(), "apt install -y \\
                 radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
@@ -148,59 +147,70 @@ pub fun create_image(distro_name, distro_version, arch, base_type, device, image
             run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
             run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
 
-            unsafe $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
-            echo_info("copy config to {get_tmp_path()}/config")
-            unsafe $sudo cp -r {device_config_path}/config/* {get_tmp_path()}/config$
-            unsafe $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
+            trust $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
         }
 
         run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
-        // rock5b 把一些内核模块用xz压缩了
-        // run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
-
     }
 
     echo_info("generate /etc/fstab")
-    let root_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{root_part}$
+    let root_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{root_part}$
     echo_info("root uuid: {root_part_uuid}")
-    unsafe $echo \"UUID={root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1\" | sudo tee {get_tmp_path()}/etc/fstab > /dev/null$
+    trust $echo \"UUID={root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1\" | sudo tee {get_tmp_path()}/etc/fstab > /dev/null$
     if config_part > 0 {
-        let config_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{config_part}$
+        let config_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{config_part}$
         echo_info("config uuid: {config_part_uuid}")
-        unsafe $echo \"UUID={config_part_uuid} /config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+        trust $echo \"UUID={config_part_uuid} /config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
     }
-    let uefi_part_uuid = unsafe $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
+    let uefi_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
     echo_info("efi uuid: {uefi_part_uuid}")
-    unsafe $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
-    unsafe $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>/dev/null$
+    trust $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
+    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>/dev/null$
 
     // rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
     run_command_in_chroot(get_tmp_path(), "sed -i 's/UUID=[0-9a-fA-F]\\\{8\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{12\\}/UUID={root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null")
 
     // 添加自动扩容，配合 /etc/fstab x-systemd.growfs
-    unsafe $sudo mkdir -p {get_tmp_path()}/etc/repart.d$
-    unsafe $echo \"[Partition]\" | sudo tee {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
-    unsafe $echo \"Type=linux-generic\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
-    unsafe $echo \"GrowFileSystem=true\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
+    trust $sudo mkdir -p {get_tmp_path()}/etc/repart.d$
+    trust $echo \"[Partition]\" | sudo tee {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
+    trust $echo \"Type=linux-generic\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
+    trust $echo \"GrowFileSystem=true\" | sudo tee -a {get_tmp_path()}/etc/repart.d/growroot.conf > /dev/null$
 
     echo_info("set hostname")
-    unsafe $echo \"deepin-{arch}-{device}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
+    trust $echo \"deepin-{arch}-{device}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
 
     echo_info("update-initramfs -u")
     run_command_in_chroot(get_tmp_path(), "update-initramfs -u")
 
+    if device == "rock-5b" {
+        // rock5b 把一些内核模块用xz压缩了，不知道为啥不能正确解压，这里将ko解压
+        run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
+    }
+
     if device != "rock-5b" {
+        if base_type == "desktop" {
+            // 配置 deepin-installer
+            trust $sudo install -D {get_config_path()}/deepin-installer/deepin-installer.conf {get_tmp_path()}/etc/deepin-installer/deepin-installer.conf$
+            trust $echo -n 'apt_source_deb=\"' | sudo tee -a {get_tmp_path()}/etc/deepin-installer/deepin-installer.conf > /dev/null$
+            // TODO 循环多个源拼接
+            trust $echo -n "{sources}\\\\n" | sudo tee -a {get_tmp_path()}/etc/deepin-installer/deepin-installer.conf > /dev/null$
+            trust $echo -n '"' | sudo tee -a {get_tmp_path()}/etc/deepin-installer/deepin-installer.conf > /dev/null$
+
+            trust $sudo ln -s ../deepin-installer-first-boot.service {get_tmp_path()}/usr/lib/systemd/system/multi-user.target.wants/deepin-installer-first-boot.service$
+            trust $sudo rm {get_tmp_path()}/usr/lib/systemd/system/deepin-installer.service$
+        }
         run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
         run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
         run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
     }
     run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
 
+
     umount_chroot()
-    silent unsafe $sudo e2fsck -p -f {loop_device}p{root_part}$
-    silent unsafe $sudo resize2fs -M {loop_device}p{root_part}$
-    unsafe $sudo losetup -D {loop_device}$
+    silent trust $sudo e2fsck -p -f {loop_device}p{root_part}$
+    silent trust $sudo resize2fs -M {loop_device}p{root_part}$
+    trust $sudo losetup -D {loop_device}$
 
     echo_success("output {image_path} success")
 }

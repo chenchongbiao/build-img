@@ -7,7 +7,7 @@ BIMG=bimg
 
 # 构建可执行文件
 build:
-	@amber main.ab bimg
+	@amber build main.ab bimg
 
 # 安装一些必要的服务，如果需要在 x86 构建其他架构需要安装 qemu-user-static，并重启 systemd-binfmt 服务
 install-dep:

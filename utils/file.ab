@@ -1,6 +1,6 @@
-import { dir_exist, create_dir } from "std/fs"
+import { dir_exists, dir_create } from "std/fs"
 
-let pwd = unsafe $pwd$
+let pwd = trust $pwd$
 
 pub fun get_cache_path(): Text {
     return "{pwd}/cache"
@@ -42,13 +42,17 @@ pub fun get_image_path(distro_name, distro_version, device, arch, base_type): Te
     return "{get_output_path()}/{get_image_name(distro_name, distro_version, device, arch, base_type)}"
 }
 
+pub fun get_config_path(): Text {
+    return "{pwd}/config/"
+}
+
 pub fun get_device_config_path(arch, device): Text {
     return "{pwd}/config/{arch}/{device}"
 }
 
 pub fun check_dotfiles() {
     let dir_list = [get_output_path(), get_cache_path(),get_tmp_path()]
-    loop dir in dir_list {
-        if not dir_exist(dir): create_dir(dir)
+    for dir in dir_list {
+        if not dir_exists(dir): dir_create(dir)
     }
 }

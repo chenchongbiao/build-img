@@ -1,7 +1,7 @@
 import { build_cmd } from "./cli/build.ab"
 import { check_dotfiles } from "./utils/file.ab"
 
-main (args) {
+main (_args) {
     let distro_name=""
     let distro_version=""
     let components=""
@@ -11,34 +11,34 @@ main (args) {
     let base_type="minimal"
     let image_size="0"
 
-    let command = args[1]
-    let build_tag = args[2] // board rootimg
+    let command = _args[1]
+    let build_tag = _args[2] // board rootimg
 
-    loop i, arg in args {
+    for i, arg in _args {
         if {
             arg == "--name" or arg == "-n" {
-                distro_name = args[i+1]
+                distro_name = _args[i+1]
             }
             arg == "--distro" or arg == "-d" {
-                distro_version = args[i+1]
+                distro_version = _args[i+1]
             }
             arg == "--components" or arg == "-c"{
-                components = args[i+1]
+                components = _args[i+1]
             }
             arg == "--arch" or arg == "-a" {
-                arch = args[i+1]
+                arch = _args[i+1]
             }
             arg == "--sources" or arg == "-s" {
-                sources = args[i+1]
+                sources = _args[i+1]
             }
             arg == "--base-type" {
-                base_type = args[i+1]
+                base_type = _args[i+1]
             }
             arg == "--device" {
-                device = args[i+1]
+                device = _args[i+1]
             }
             arg == "--image-size" {
-                image_size = args[i+1]
+                image_size = _args[i+1]
             }
         }
     }
