@@ -26,6 +26,10 @@ pub fun get_tmp_path(): Text {
     return "{get_cache_path()}/tmp"
 }
 
+pub fun get_livecd_path(): Text {
+    return "{get_cache_path()}/livecd"
+}
+
 pub fun get_tar_file_name(distro_name, distro_version, arch, base_type): Text {
     return "{get_rootfs_name(distro_name, distro_version, arch, base_type)}.tar.gz"
 }
@@ -51,7 +55,7 @@ pub fun get_device_config_path(arch, device): Text {
 }
 
 pub fun check_dotfiles() {
-    let dir_list = [get_output_path(), get_cache_path(),get_tmp_path()]
+    let dir_list = [get_output_path(), get_cache_path(), get_tmp_path(), get_livecd_path()]
     for dir in dir_list {
         if not dir_exists(dir): dir_create(dir)
     }

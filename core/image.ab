@@ -1,7 +1,8 @@
-import { echo_info, echo_error, echo_success } from "std/env"
+import { echo_info, echo_error, echo_success, env_const_get } from "std/env"
+import { file_chown, file_write } from "std/fs"
 import { math_ceil } from "std/math"
 
-import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name, get_config_path } from "../utils/file.ab"
+import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name, get_config_path, get_cache_path, get_output_path, get_livecd_path } from "../utils/file.ab"
 import { umount_chroot, mount_chroot, run_command_in_chroot } from "./chroot.ab"
 import { extract_rootfs } from "./rootfs.ab"
 
@@ -213,4 +214,210 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     trust $sudo losetup -D {loop_device}$
 
     echo_success("output {image_path} success")
+}
+
+pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, device) {
+    // 参考 https://www.cnblogs.com/searchstar/p/18437677
+    umount_chroot()
+    trust $sudo rm -rf {get_tmp_path()}/*$
+    let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
+    let tar_file_path = get_tar_file_path(tar_file_name)
+    extract_rootfs(tar_file_path)
+    mount_chroot()
+
+    run_command_in_chroot(get_tmp_path(), "apt update")
+
+    let arch_efi = ""
+    if {
+        arch == "amd64" {
+            // 安装内核
+            run_command_in_chroot(get_tmp_path(), "apt install -y linux-image-deepin-hwe-amd64")
+            arch_efi = "x86_64-efi"
+            run_command_in_chroot(get_tmp_path(), "apt install -y grub-efi-amd64-bin")
+        }
+        arch == "arm64" {
+            run_command_in_chroot(get_tmp_path(), "apt install -y linux-image-6.6.36-arm64-desktop-hwe")
+            arch_efi = "arm64-efi"
+            run_command_in_chroot(get_tmp_path(), "apt install -y grub-efi-arm64-bin")
+        }
+    }
+    // 提供init的
+    run_command_in_chroot(get_tmp_path(), "apt install -y live-boot systemd-sysv")
+
+    // 创建必要的目录, staging下面存放的就是用来制作ISO的文件。
+    let staging = "{get_livecd_path()}/staging"
+    trust $rm -rf {get_livecd_path()}$
+
+    echo_info("mkdir {staging}")
+    trust $mkdir -p \{{staging}/\{EFI/boot,boot/grub/{arch_efi},isolinux,live},{get_livecd_path()}/tmp}$
+
+    // Boot Loader Files
+    run_command_in_chroot(get_tmp_path(), "apt install -y isolinux")
+    echo_info("cp Boot Loader Files")
+    trust $cp {get_tmp_path()}/usr/lib/ISOLINUX/isohdpfx.bin {get_livecd_path()}/tmp/ && \\
+    cp {get_tmp_path()}/usr/lib/ISOLINUX/isolinux.bin {staging}/isolinux/ && \\
+    cp {get_tmp_path()}/usr/lib/syslinux/modules/bios/* {staging}/isolinux/$
+    trust $cp -r {get_tmp_path()}/usr/lib/grub/{arch_efi}/* {staging}/boot/grub/{arch_efi}/$
+
+    echo_info("cp kernel")
+    trust $cp {get_tmp_path()}/boot/vmlinuz-* {staging}/live/vmlinuz$
+    trust $cp {get_tmp_path()}/boot/initrd.img-* {staging}/live/initrd$
+    let user = trust env_const_get("USER")
+    file_chown("{staging}/live/initrd", user)
+
+    if base_type == "desktop" {
+        echo_info("add desktop to default")
+        trust $sudo cp {get_tmp_path()}/usr/share/applications/firefox.desktop {get_tmp_path()}/etc/skel/Desktop$
+        echo_info("remove desktop from {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop")
+        trust $sudo rm {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop$
+        echo_info("remove org.deepin.browser.desktop from {get_tmp_path()}/etc/skel/Desktop")
+    }
+
+    // 添加 deepin 用户
+    echo_info("add user")
+    run_command_in_chroot(get_tmp_path(), "useradd -s /bin/bash -m -g users deepin")
+    run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
+    run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
+
+    // 允许 root 远程登录
+    run_command_in_chroot(get_tmp_path(), "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config")
+
+    echo_info("set hostname")
+    trust $echo \"deepin-{arch}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
+
+    echo_info("set locale")
+    trust $echo \"LANG=zh_CN.UTF-8\" | sudo tee {get_tmp_path()}/etc/locale.conf > /dev/null$
+    trust $echo \"LANGUAGE=zh_CN\" | sudo tee -a {get_tmp_path()}/etc/locale.conf > /dev/null$
+
+    trust $echo \"LANG=zh_CN.UTF-8\" | sudo tee {get_tmp_path()}/etc/environment.d/locale.conf > /dev/null$
+    trust $echo \"LANGUAGE=zh_CN\" | sudo tee -a {get_tmp_path()}/etc/environment.d/locale.conf > /dev/null$
+
+    run_command_in_chroot(get_tmp_path(), "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config")
+
+    run_command_in_chroot(get_tmp_path(), "apt purge -y isolinux")
+    if {
+        arch == "amd64" {
+            run_command_in_chroot(get_tmp_path(), "apt purge -y grub-efi-amd64-bin")
+        }
+        arch == "arm64" {
+            run_command_in_chroot(get_tmp_path(), "apt purge -y grub-efi-arm64-bin")
+        }
+    }
+    // 清理 apt 缓存
+    run_command_in_chroot(get_tmp_path(), "apt clean")
+
+    umount_chroot()
+
+    // 修改完根文件系统之后，就可以把它压缩为squashfs了
+    // /boot目录排除了，这是因为系统启动的时候会先读取/boot下面的内核等，最后才挂载根文件系统，因此/boot目录不能放到根文件系统里，而是另外放。
+    trust $sudo mksquashfs \\
+    {get_tmp_path()} \\
+    {staging}/live/filesystem.squashfs \\
+    -e boot$
+
+    let isolinux_cfg = "{staging}/isolinux/isolinux.cfg"
+    let text = "UI vesamenu.c32
+
+MENU TITLE Boot Menu
+DEFAULT linux
+TIMEOUT 600
+MENU RESOLUTION 640 480
+MENU COLOR border       30;44   #40ffffff #a0000000 std
+MENU COLOR title        1;36;44 #9033ccff #a0000000 std
+MENU COLOR sel          7;37;40 #e0ffffff #20ffffff all
+MENU COLOR unsel        37;44   #50ffffff #a0000000 std
+MENU COLOR help         37;40   #c0ffffff #a0000000 std
+MENU COLOR timeout_msg  37;40   #80ffffff #00000000 std
+MENU COLOR timeout      1;37;40 #c0ffffff #00000000 std
+MENU COLOR msg07        37;40   #90ffffff #a0000000 std
+MENU COLOR tabmsg       31;40   #30ffffff #00000000 std
+
+LABEL linux
+  MENU LABEL deepin Live [BIOS/ISOLINUX]
+  MENU DEFAULT
+  KERNEL /live/vmlinuz
+  APPEND initrd=/live/initrd boot=live
+
+LABEL linux
+  MENU LABEL deepin Live [BIOS/ISOLINUX] (nomodeset)
+  MENU DEFAULT
+  KERNEL /live/vmlinuz
+  APPEND initrd=/live/initrd boot=live nomodeset"
+    trust file_write(isolinux_cfg, text)
+
+    let grub_cfg = "{staging}/boot/grub/grub.cfg"
+    text = "search --set=root --label deepin
+
+set default=\"0\"
+set timeout=30
+
+# If X has issues finding screens, experiment with/without nomodeset.
+
+menuentry \"deepin Live [EFI/GRUB]\" \{
+    insmod all_video
+    linux ($root)/live/vmlinuz boot=live
+    initrd ($root)/live/initrd
+}
+
+menuentry \"deepin Live [EFI/GRUB] (nomodeset)\" \{
+    insmod all_video
+    linux ($root)/live/vmlinuz boot=live nomodeset
+    initrd ($root)/live/initrd
+}"
+    // 其中insmod all_video可以解决no suitable video mode found的问题：https://lists.gnu.org/archive/html/help-grub/2018-01/msg00009.html
+    trust file_write(grub_cfg, text)
+
+    let grub_standalone_cfg = "{get_livecd_path()}/tmp/grub-standalone.cfg"
+    text = "search --set=root --label deepin
+set prefix=($root)/boot/grub/
+configfile /boot/grub/grub.cfg"
+    trust file_write(grub_standalone_cfg, text)
+
+    // 创建一个独立的GRUB2 EFI可执行文件
+    let boot_efi_file = ""
+    if {
+        arch == "amd64" {
+            // 安装内核
+            boot_efi_file = "bootx64.efi"
+        }
+        arch == "arm64" {
+            boot_efi_file = "bootaa64.efi"
+        }
+    }
+    trust $grub-mkstandalone \\
+    --format={arch_efi} \\
+    --output={get_livecd_path()}/tmp/{boot_efi_file} \\
+    --locales=\"\" \\
+    --fonts=\"\" \\
+    \"boot/grub/grub.cfg={grub_standalone_cfg}\"$
+
+    // 创建一个EFI系统分区镜像文件
+    let efi_boot_img = "{staging}/EFI/boot/efiboot.img"
+    trust $dd if=/dev/zero of={efi_boot_img} bs=1M count=20$
+    trust $/sbin/mkfs.vfat {efi_boot_img}$
+    trust $mmd -i {efi_boot_img} efi efi/boot$
+    trust $mcopy -vi {efi_boot_img} {get_livecd_path()}/tmp/{boot_efi_file} ::efi/boot/$
+
+    let iso_path = "{get_output_path()}/deepin-custom-{arch}.iso"
+    // 生成 iso
+    trust $rm {iso_path}$
+    trust $xorriso \\
+    -as mkisofs \\
+    -iso-level 3 \\
+    -o {iso_path} \\
+    -full-iso9660-filenames \\
+    -volid "deepin" \\
+    -isohybrid-mbr {get_livecd_path()}/tmp/isohdpfx.bin \\
+    -eltorito-boot \\
+        isolinux/isolinux.bin \\
+        -no-emul-boot \\
+        -boot-load-size 4 \\
+        -boot-info-table \\
+        --eltorito-catalog isolinux/isolinux.cat \\
+    -eltorito-alt-boot \\
+        -e /EFI/boot/efiboot.img \\
+        -no-emul-boot \\
+        -isohybrid-gpt-basdat \\
+    -append_partition 2 0xef {staging}/EFI/boot/efiboot.img \\
+    \"{staging}\"$
 }

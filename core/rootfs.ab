@@ -11,6 +11,7 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
     // 桌面环境 deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras
     // 控制中心输入法插件 deepin-fcitx5configtool-plugin
     // 安装器 deepin-installer deepin-installer-timezones
+    // ai 工具 uos-ai
     let desktop_packages = "firefox"
     let include_packages = ""
 
