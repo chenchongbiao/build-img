@@ -185,6 +185,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     run_command_in_chroot(get_tmp_path(), "update-initramfs -u")
 
     if device == "rock-5b" {
+        trust $echo \"usb_storage\" | sudo tee -a {get_tmp_path()}/etc/modules > /dev/null$
         // rock5b 把一些内核模块用xz压缩了，不知道为啥不能正确解压，这里将ko解压
         run_command_in_chroot(get_tmp_path(), "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d \{} +")
     }
