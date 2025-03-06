@@ -123,9 +123,9 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     trust $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
 
     echo_info("copy extra packages to {get_tmp_path()}/tmp")
-    trust $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp || true$
+    trust $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp 2>/dev/null$
     echo_info("installing extra packages from {get_tmp_path()}/tmp")
-    run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb")
+    run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb 2>/dev/null")
 
     if device == "rock-5b" {
         // 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
@@ -154,6 +154,15 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
         run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
     }
 
+    if device == "qemu" {
+        if {
+            arch == "amd64" {
+                // 安装内核
+                run_command_in_chroot(get_tmp_path(), "apt update && apt install -y linux-\{image,headers}-6.6.71-amd64-desktop-hwe")
+            }
+        }
+    }
+
     echo_info("generate /etc/fstab")
     let root_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{root_part}$
     echo_info("root uuid: {root_part_uuid}")
@@ -167,7 +176,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     echo_info("efi uuid: {uefi_part_uuid}")
     trust $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
     trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
-    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/boot/grub.cfg 2>/dev/null$
+    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/\{boot,deepin}/grub.cfg 2>/dev/null$
 
     // rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
     run_command_in_chroot(get_tmp_path(), "sed -i 's/UUID=[0-9a-fA-F]\\\{8\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{12\\}/UUID={root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null")

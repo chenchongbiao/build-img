@@ -1,5 +1,5 @@
 import { file_exists, dir_exists, dir_create } from "std/fs"
-import { join } from "std/text"
+import { split, join } from "std/text"
 import { echo_info, echo_success, echo_error } from "std/env"
 
 import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_tmp_path } from "../utils/file.ab"
@@ -7,12 +7,19 @@ import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file
 // 创建 rootfs 缓存
 pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sources, base_type, device) {
     let mininal_packages = "apt,apt-utils,bash-completion,curl,sudo,vim,bash,ca-certificates,deepin-keyring,init,ssh,net-tools,iputils-ping,lshw,iproute2,iptables,locales,procps"
-    let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr" // linux-firmware 被升级后无法正常安装，先移除
-    // 桌面环境 deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras
-    // 控制中心输入法插件 deepin-fcitx5configtool-plugin
-    // 安装器 deepin-installer deepin-installer-timezones
-    // ai 工具 uos-ai
-    let desktop_packages = "firefox"
+    let board_packages = "dmidecode,adduser,uuid-runtime,iw,initramfs-tools,polkitd,dbus-daemon,network-manager,systemd,systemd-timesyncd,kmod,udev,parted,pciutils,ldnsutils,wpasupplicant,wireless-tools,rfkill,efibootmgr,linux-firmware"
+
+    let desktop_packages = ""
+    if {
+        // 桌面环境 deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras
+        // 控制中心输入法插件 deepin-fcitx5configtool-plugin
+        // 安装器 deepin-installer deepin-installer-timezones
+        // ai 工具 uos-ai
+        distro_name == "deepin" {
+            desktop_packages += "firefox,uos-ai,deepin-desktop-environment-base,deepin-desktop-environment-cli,deepin-desktop-environment-core,deepin-desktop-environment-extras"
+        }
+    }
+
     let include_packages = ""
 
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
@@ -39,7 +46,7 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         --architectures={arch} \
         {distro_version} \
         {rootfs_path} \
-        \"{sources}\"$
+        "{split(sources, ",")}"$
 }
 
 pub fun create_rootfs_tar_file(distro_name, distro_version, arch, base_type) {
