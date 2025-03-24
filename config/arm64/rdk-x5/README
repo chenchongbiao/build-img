@@ -1,0 +1,38 @@
+hobot-audio-config                    Configuration files and dtbo files of audio hat
+hobot-boot                            Kernel Package. Provides kernel image and drivers.
+hobot-camera                          Camera Sensor Support Package
+hobot-configs                         Hobot custom system configuration
+hobot-display                         dtbo files of dsi lcd panel
+hobot-dnn                             BPU Runtime Support Package
+hobot-dtb                             Kernel DTB Package, This package provides kernel device tree.
+hobot-io                              IO Support Package
+hobot-io-samples                      Example of Peripheral Interface
+hobot-kernel-headers                  Linux kernel headers for 6.1.83 on arm64
+hobot-miniboot                        RDK Miniboot updater
+hobot-models-basic                    Basic models for RDK X5
+hobot-multimedia                      Multimedia Support Package
+hobot-multimedia-dev                  Multimedia Development Support Package
+hobot-multimedia-samples              Example of Multimedia
+hobot-sp-samples                      Example of Python and C/C++ Development Interface
+hobot-spdev                           Python and C/C++ Development Interface
+hobot-utils                           Hobot Software Toolset  这里 rdk-x5 没有安装，linux-base
+hobot-wifi                            Wi-Fi Support Package
+tros-humble-clip-encode-text          hobot Clip encode text
+tros-humble-clip-msgs                 message for hobot clip  无法安装，依赖 libpython3.10，deepin 上已经 libpython3.12，重新打包，或者就修改这个依赖版本
+tros-humble-hobot-audio               TogetheROS hobot audio
+tros-humble-hobot-codec               TogetheROS hobot codec
+tros-humble-hobot-cv                  TogetheROS hobot cv
+tros-humble-hobot-dosod               TogetheROS DOSOD perception
+tros-humble-hobot-falldown-detection  TogetheROS hobot falldown detection
+tros-humble-hobot-hdmi                TogetheROS image display through hdmi
+tros-humble-hobot-image-publisher     TogetheROS hobot image publisher
+tros-humble-hobot-mot                 TogetheROS hobot multiple object tracking
+tros-humble-hobot-rtsp-client         TogetheROS hobot usb camera
+tros-humble-hobot-shm                 TogetheROS shared memory setting package
+tros-humble-hobot-stereonet           A TogetheROS Driver for stereonet model
+tros-humble-hobot-stereonet-utils     hobot_stereonet_utils
+tros-humble-hobot-usb-cam             TogetheROS hobot usb camera
+tros-humble-hobot-vio                 TogetheROS hobot_vio node
+tros-humble-hobot-visualization       TogetheROS hobot ai_msgs to visualization_msgs
+tros-humble-hobot-yolo-world          TogetheROS yolo world perception
+tros-humble-hobot-zed-cam             zed camera publish stereo images

@@ -2,6 +2,7 @@ import { file_exists, dir_exists, dir_create } from "std/fs"
 import { split, join } from "std/text"
 import { echo_info, echo_success, echo_error } from "std/env"
 
+import { umount_chroot, mount_chroot, run_command_in_chroot } from "./chroot.ab"
 import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_tmp_path } from "../utils/file.ab"
 
 // 创建 rootfs 缓存
@@ -16,22 +17,13 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         // 安装器 deepin-installer deepin-installer-timezones
         // ai 工具 uos-ai
         distro_name == "deepin" {
-            desktop_packages += "firefox,uos-ai,deepin-desktop-environment-base,deepin-desktop-environment-cli,deepin-desktop-environment-core,deepin-desktop-environment-extras"
+            desktop_packages = "firefox uos-ai deepin-desktop-environment-base deepin-desktop-environment-cli deepin-desktop-environment-core deepin-desktop-environment-extras"
         }
     }
 
-    let include_packages = ""
+    let include_packages = join([mininal_packages, board_packages], ",")
 
     let rootfs_path = get_rootfs_path(distro_name, distro_version, arch, base_type)
-
-    if {
-        base_type == "minimal" {
-            include_packages = join([mininal_packages, board_packages], ",")
-        }
-        base_type == "desktop" {
-            include_packages = join([mininal_packages, board_packages, desktop_packages], ",")
-        }
-    }
 
     if not dir_exists(rootfs_path) {
         echo_info("create {rootfs_path}")
@@ -47,6 +39,18 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         {distro_version} \
         {rootfs_path} \
         "{split(sources, ",")}"$
+
+    if base_type == "desktop" {
+        umount_chroot(rootfs_path)
+        echo_info("mount chroot {rootfs_path}")
+        run_command_in_chroot(rootfs_path, "apt update")
+        run_command_in_chroot(rootfs_path, "apt install -y \\
+        {desktop_packages}")
+        // 允许 lightdm 自启动
+        run_command_in_chroot(rootfs_path, "systemctl enable lightdme")
+        run_command_in_chroot(rootfs_path, "apt clean")
+        umount_chroot(rootfs_path)
+    }
 }
 
 pub fun create_rootfs_tar_file(distro_name, distro_version, arch, base_type) {

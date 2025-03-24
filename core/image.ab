@@ -1,6 +1,7 @@
 import { echo_info, echo_error, echo_success, env_const_get } from "std/env"
 import { file_chown, file_write } from "std/fs"
 import { math_ceil } from "std/math"
+import { array_contains } from "std/array"
 
 import { get_rootfs_path, get_rootfs_cache_path, get_tar_file_name, get_tar_file_path, get_image_path, get_device_config_path, get_tmp_path, get_rootfs_name, get_config_path, get_cache_path, get_output_path, get_livecd_path } from "../utils/file.ab"
 import { umount_chroot, mount_chroot, run_command_in_chroot } from "./chroot.ab"
@@ -26,7 +27,6 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     // 再进行扩展，生成镜像的大小
     let sdsize = fixed_image_size
     if base_type == "minimal" {
-        // sdsize = trust $bc -l <<< "scale=0; ((({image_size_int} * 1.35) / 1 + 0) / 4 + 1) * 4"$ as Num
         sdsize = math_ceil((fixed_image_size * 1.3 / 4) * 4)
     } else {
         // 安装桌面, 需要更大的空间
@@ -42,37 +42,55 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     let next = 1
 
     let config_part = -1
-    if device == "rock-5b" {
+    if array_contains(["rock-5b", "rdk-x5"], device) {
 		config_part = next
 		next += 1
 	}
 
-    let uefi_part = next
-    next += 1
+    let uefi_part = -1
+    if device != "rdk-x5" {
+        uefi_part = next
+        next += 1
+    }
+
     let root_part = next
 
     echo_info("create partition table")
     if config_part > 0 {
-        // 这里给 rock5b 单独需要设置 config 分区，另外的设置根分区为 8300 的通用文件系统时启动后也无法正确挂载。这里设置 8305 Linux ARM64 root
-        let config_size = 16
-        $(echo n; echo {config_part}; echo "32768"; echo +{config_size}M; echo 0700; \
-		echo c; echo config; \
-		echo n; echo {uefi_part}; echo "65536"; echo +{uefi_size}M; echo ef00; \
-		echo c; echo {uefi_part}; echo efi; \
-		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\";\
-		echo c; echo {root_part}; echo root; \
-		echo w; echo y) | gdisk {image_path}$ failed {
-            echo_error("create partition table error")
+        if {
+            device == "rock-5b" {
+                // 这里给 rock5b 单独需要设置 config 分区，另外的设置根分区为 8300 的通用文件系统时启动后也无法正确挂载。这里设置 8305 Linux ARM64 root
+                let config_size = 16
+                $(echo n; echo {config_part}; echo "32768"; echo +{config_size}M; echo 0700; \
+                echo c; echo config; \
+                echo n; echo {uefi_part}; echo "65536"; echo +{uefi_size}M; echo ef00; \
+                echo c; echo {uefi_part}; echo efi; \
+                echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\";\
+                echo c; echo {root_part}; echo root; \
+                echo w; echo y) | gdisk {image_path} > /dev/null$ failed {
+                    echo_error("create partition table error")
+                }
+
+                // 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
+                trust $sudo parted {image_path} set {root_part} legacy_boot on$
+            }
+            device == "rdk-x5" {
+                $(echo n; echo p; echo {config_part}; echo "8192"; echo +256M; \
+                echo t; echo "0c"; \
+                echo n; echo p; echo {root_part}; echo "557056"; echo \"\"; \
+                echo w) | fdisk {image_path} > /dev/null$ failed {
+                    echo_error("create partition table error")
+                }
+                trust $sudo parted {image_path} set {root_part} boot on$
+            }
         }
 
-        // 给 rock5b 设置 legacy_boot flag，否则启动的时候无法找到
-        trust $sudo parted {image_path} set {root_part} legacy_boot on $
     } else {
-        $(echo n; echo {uefi_part}; echo \"\"; echo +{uefi_size}M;  echo ef00; \
+        $(echo n; echo {uefi_part}; echo \"\"; echo +{uefi_size}M; echo ef00; \
 		echo c; echo efi; \
 		echo n; echo {root_part}; echo \"\"; echo \"\"; echo \"\"; \
 		echo c; echo {root_part}; echo root; \
-		echo w; echo y) | gdisk {image_path}$ failed {
+		echo w; echo y) | gdisk {image_path} > /dev/null$ failed {
             echo_error("create partition table error")
         }
     }
@@ -86,38 +104,49 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
 
     trust {
         // 设置这些文件系统的标签。dosfslabel 是用来设置vfat（FAT）文件系统的标签，e2label 是用来设置ext2/ext3/ext4文件系统的标签
-        $sudo mkfs.vfat -F32 {loop_device}p{uefi_part}$
-        $sudo dosfslabel {loop_device}p{uefi_part} efi$
+        if not array_contains(["rdk-x5"], device) {
+            $sudo mkfs.vfat -F32 {loop_device}p{uefi_part}$
+            $sudo dosfslabel {loop_device}p{uefi_part} efi$
+        }
+
         $sudo mkfs.ext4 {loop_device}p{root_part}$
         $sudo e2label {loop_device}p{root_part} root$
 
-        if config_part > 0 {
-            $sudo mkfs.vfat -F32 {loop_device}p{config_part}$
-            $sudo e2label {loop_device}p{config_part} config$
-            $sudo fatlabel {loop_device}p{config_part} config$
+        if {
+            device == "rock-5b" {
+                $sudo mkfs.vfat -F32 {loop_device}p{config_part}$
+                $sudo e2label {loop_device}p{config_part} config$
+                $sudo fatlabel {loop_device}p{config_part} config$
+            }
+            device == "rdk-x5" {
+                $sudo mkfs.vfat -F32 {loop_device}p{config_part}$
+                $sudo fatlabel {loop_device}p{config_part} CONFIG$
+            }
         }
     }
 
-    umount_chroot()
+    umount_chroot(get_tmp_path())
     echo_info("mount {loop_device}p{root_part} {get_tmp_path()}")
     trust $sudo mount {loop_device}p{root_part} {get_tmp_path()}$
     let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
     let tar_file_path = get_tar_file_path(tar_file_name)
     extract_rootfs(tar_file_path)
-    mount_chroot()
+    mount_chroot(get_tmp_path())
 
-    trust $sudo mkdir {get_tmp_path()}/boot/efi$
-    echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
-    trust $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
-    trust $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
+    if not array_contains(["rdk-x5"], device) {
+        trust $sudo mkdir {get_tmp_path()}/boot/efi$
+        echo_info("mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi")
+        trust $sudo mount {loop_device}p{uefi_part} {get_tmp_path()}/boot/efi$
+        trust $sudo cp -r {device_config_path}/EFI {get_tmp_path()}/boot/efi 2>/dev/null$
 
-    echo_info("copy grup to {get_tmp_path()}/boot")
-    trust $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
+        echo_info("copy grup to {get_tmp_path()}/boot")
+        trust $sudo cp -r {device_config_path}/grub {get_tmp_path()}/boot 2>/dev/null$
 
-    echo_info("copy kernel to {get_tmp_path()}/boot")
-    trust $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
-    trust $sudo mkdir {get_tmp_path()}/lib/modules$
-    trust $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
+        echo_info("copy kernel to {get_tmp_path()}/boot")
+        trust $sudo cp -r {device_config_path}/kernel/* {get_tmp_path()}/boot 2>/dev/null$
+        trust $sudo mkdir {get_tmp_path()}/lib/modules$
+        trust $sudo cp -r {device_config_path}/modules/* {get_tmp_path()}/lib/modules 2>/dev/null$
+    }
 
     echo_info("copy sources.list.d to {get_tmp_path()}/etc/apt/sources.list.d")
     trust $sudo cp -r {device_config_path}/sources.list.d/* {get_tmp_path()}/etc/apt/sources.list.d 2>/dev/null$
@@ -127,31 +156,62 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     echo_info("installing extra packages from {get_tmp_path()}/tmp")
     run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb 2>/dev/null")
 
-    if device == "rock-5b" {
-        // 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
-        if true {
-            trust $sudo mkdir {get_tmp_path()}/config$
-            trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
+    if {
+        device == "rock-5b" {
+            // 开关，第一次搓的时候运行，后续把搓好的镜像到宿主机把 ko.xz 解压后， sudo depmod -a 重新扫描模块后，重新打包镜像
+            if true {
+                trust $sudo mkdir {get_tmp_path()}/config$
+                trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
 
-            // rock 5b 用 github 做 apt 仓库，需要代理
-            trust $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
-            trust $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
-            run_command_in_chroot(get_tmp_path(), "apt update")
-            // debian dkms 加了 /etc/kernel 下的内容
-            trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
-            run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
-            run_command_in_chroot(get_tmp_path(), "apt install -y \\
-                radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
-                rfkill \\
-                u-boot-tools efibootmgr systemd-boot apt-listchanges \\
-                pipewire-audio avahi-daemon")
-            run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
-            run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
+                // rock 5b 用 github 做 apt 仓库，需要代理
+                trust $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+                trust $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+                run_command_in_chroot(get_tmp_path(), "apt update")
+                // debian dkms 加了 /etc/kernel 下的内容
+                trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
+                run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
+                run_command_in_chroot(get_tmp_path(), "apt install -y \\
+                    radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
+                    rfkill \\
+                    u-boot-tools efibootmgr systemd-boot apt-listchanges \\
+                    pipewire-audio avahi-daemon")
+                run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
+                run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
 
-            trust $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
+                trust $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
+            }
+
+            run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
         }
+        device == "rdk-x5" {
+            // trust $sudo cp -r {device_config_path}/boot/* {get_tmp_path()}/boot 2>/dev/null$
+            trust $sudo mkdir -p {get_tmp_path()}/boot/config$
+            trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/boot/config$
+            trust $sudo cp -r {device_config_path}/config/* {get_tmp_path()}/boot/config 2>/dev/null$
 
-        run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
+            run_command_in_chroot(get_tmp_path(), "apt update")
+            // hobot-boot 是 hobot 的依赖
+            run_command_in_chroot(get_tmp_path(), "apt install -y hobot-boot")
+            // rdk-x5 不使用这个，先删除，
+            run_command_in_chroot(get_tmp_path(), "apt download --allow-unauthenticated hobot-utils && dpkg -i --force-overwrite ./*.deb && rm ./*.deb")
+            run_command_in_chroot(get_tmp_path(), "apt install -y \\
+                hobot-audio-config hobot-camera hobot-configs \\
+                hobot-display hobot-dnn hobot-dtb hobot-io hobot-io-samples \\
+                hobot-kernel-headers hobot-miniboot hobot-models-basic hobot-multimedia \\
+                hobot-multimedia-dev hobot-multimedia-samples hobot-sp-samples \\
+                hobot-spdev hobot-wifi")
+            // 覆盖掉原来忽略的gpg
+            trust $echo \"deb [signed-by=/usr/share/keyrings/sunrise.gpg] http://archive.d-robotics.cc/ubuntu-rdk-x5 jammy main\" | sudo tee {get_tmp_path()}/etc/apt/sources.list.d/sunrise.list > /dev/null$
+            // 安装相关的包后 lightdm 会被禁用，这里允许启动
+            run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
+                // hobot-utils
+                // tros-humble-clip-encode-text tros-humble-clip-msgs tros-humble-hobot-audio tros-humble-hobot-codec \\
+                // tros-humble-hobot-cv tros-humble-hobot-dosod tros-humble-hobot-falldown-detection \\
+                // tros-humble-hobot-hdmi tros-humble-hobot-image-publisher tros-humble-hobot-mot \\
+                // tros-humble-hobot-rtsp-client tros-humble-hobot-shm tros-humble-hobot-stereonet \\
+                // tros-humble-hobot-stereonet-utils tros-humble-hobot-usb-cam tros-humble-hobot-vio \\
+                // tros-humble-hobot-visualization tros-humble-hobot-yolo-world tros-humble-hobot-zed-cam")
+        }
     }
 
     if device == "qemu" {
@@ -170,16 +230,25 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     if config_part > 0 {
         let config_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{config_part}$
         echo_info("config uuid: {config_part_uuid}")
-        trust $echo \"UUID={config_part_uuid} /config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+        if {
+            device == "rock-5b" {
+                trust $echo \"UUID={config_part_uuid} /config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+            }
+            device == "rdk-x5" {
+                trust $echo \"UUID={config_part_uuid} /boot/config vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+            }
+        }
     }
-    let uefi_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
-    echo_info("efi uuid: {uefi_part_uuid}")
-    trust $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
-    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
-    trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/\{boot,deepin}/grub.cfg 2>/dev/null$
+    if device != "rdk-x5" {
+        let uefi_part_uuid = trust $sudo blkid -s UUID -o value {loop_device}p{uefi_part}$
+        echo_info("efi uuid: {uefi_part_uuid}")
+        trust $echo \"UUID={uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2\" | sudo tee -a {get_tmp_path()}/etc/fstab > /dev/null$
+        trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/grub/grub.cfg 2>/dev/null$
+        trust $sudo sed -i \"s/root_uuid/{root_part_uuid}/g\" {get_tmp_path()}/boot/efi/EFI/\{boot,deepin}/grub.cfg 2>/dev/null$
 
-    // rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
-    run_command_in_chroot(get_tmp_path(), "sed -i 's/UUID=[0-9a-fA-F]\\\{8\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{12\\}/UUID={root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null")
+        // rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
+        run_command_in_chroot(get_tmp_path(), "sed -i 's/UUID=[0-9a-fA-F]\\\{8\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{4\\}-[0-9a-fA-F]\\\{12\\}/UUID={root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null")
+    }
 
     // 添加自动扩容，配合 /etc/fstab x-systemd.growfs
     trust $sudo mkdir -p {get_tmp_path()}/etc/repart.d$
@@ -209,7 +278,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
             trust $echo -n '"' | sudo tee -a {get_tmp_path()}/etc/deepin-installer/deepin-installer.conf > /dev/null$
 
             trust $sudo ln -s ../deepin-installer-first-boot.service {get_tmp_path()}/usr/lib/systemd/system/multi-user.target.wants/deepin-installer-first-boot.service$
-            trust $sudo rm {get_tmp_path()}/usr/lib/systemd/system/deepin-installer.service$
+            trust $sudo rm -f {get_tmp_path()}/usr/lib/systemd/system/deepin-installer.service$
         }
         run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
         run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
@@ -218,7 +287,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
 
 
-    umount_chroot()
+    umount_chroot(get_tmp_path())
     silent trust $sudo e2fsck -p -f {loop_device}p{root_part}$
     silent trust $sudo resize2fs -M {loop_device}p{root_part}$
     trust $sudo losetup -D {loop_device}$
@@ -228,12 +297,12 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
 
 pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, device) {
     // 参考 https://www.cnblogs.com/searchstar/p/18437677
-    umount_chroot()
+    umount_chroot(get_tmp_path())
     trust $sudo rm -rf {get_tmp_path()}/*$
     let tar_file_name = get_tar_file_name(distro_name, distro_version, arch, base_type)
     let tar_file_path = get_tar_file_path(tar_file_name)
     extract_rootfs(tar_file_path)
-    mount_chroot()
+    mount_chroot(get_tmp_path())
 
     run_command_in_chroot(get_tmp_path(), "apt update")
 
@@ -316,7 +385,7 @@ pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, dev
     // 清理 apt 缓存
     run_command_in_chroot(get_tmp_path(), "apt clean")
 
-    umount_chroot()
+    umount_chroot(get_tmp_path())
 
     // 修改完根文件系统之后，就可以把它压缩为squashfs了
     // /boot目录排除了，这是因为系统启动的时候会先读取/boot下面的内核等，最后才挂载根文件系统，因此/boot目录不能放到根文件系统里，而是另外放。

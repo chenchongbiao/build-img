@@ -1,27 +1,29 @@
 import { get_tmp_path } from "../utils/file.ab"
 
-pub fun mount_chroot() {
+pub fun mount_chroot(rootfs_path) {
     trust {
-        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {get_tmp_path()}/tmp$
-        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {get_tmp_path()}/var/tmp$
-        $sudo mount -t proc chproc {get_tmp_path()}/proc$
-        $sudo mount -t sysfs chsys {get_tmp_path()}/sys$
-        $sudo mount --bind /dev {get_tmp_path()}/dev$
+        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {rootfs_path}/tmp$
+        $sudo mount -t tmpfs -o \"size=99%\" tmpfs {rootfs_path}/var/tmp$
+        $sudo mount -t proc chproc {rootfs_path}/proc$
+        $sudo mount -t sysfs chsys {rootfs_path}/sys$
+        $sudo mount --bind /dev {rootfs_path}/dev$
+        $sudo mount -t devpts devpts {rootfs_path}/dev/pts$
     }
 }
 
-pub fun umount_chroot() {
+pub fun umount_chroot(rootfs_path) {
     loop {
-        let res = trust $grep -E "{get_tmp_path()}/(dev|proc|sys|tmp|var/tmp)" /proc/mounts$
+        let res = trust $grep -E "{rootfs_path}/(dev|proc|sys|tmp|var/tmp)" /proc/mounts$
         if res == "": break
 
         trust {
-            $sudo umount --recursive {get_tmp_path()}/dev$
-            $sudo umount {get_tmp_path()}/proc$
-            $sudo umount {get_tmp_path()}/sys$
-            $sudo umount {get_tmp_path()}/tmp$
-            $sudo umount {get_tmp_path()}/var/tmp$
-            $sudo umount -l {get_tmp_path()}$
+            $sudo umount {rootfs_path}/dev/pts$
+            $sudo umount --recursive {rootfs_path}/dev$
+            $sudo umount {rootfs_path}/proc$
+            $sudo umount {rootfs_path}/sys$
+            $sudo umount {rootfs_path}/tmp$
+            $sudo umount {rootfs_path}/var/tmp$
+            $sudo umount -l {rootfs_path}$
         }
     }
 }
