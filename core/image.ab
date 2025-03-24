@@ -286,6 +286,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     }
     run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
 
+    run_command_in_chroot(get_tmp_path(), "apt clean && rm -rf /var/cache/apt/archives/*")
 
     umount_chroot(get_tmp_path())
     silent trust $sudo e2fsck -p -f {loop_device}p{root_part}$

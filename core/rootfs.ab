@@ -48,7 +48,7 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         {desktop_packages}")
         // 允许 lightdm 自启动
         run_command_in_chroot(rootfs_path, "systemctl enable lightdme")
-        run_command_in_chroot(rootfs_path, "apt clean")
+        run_command_in_chroot(rootfs_path, "apt clean && rm -rf /var/cache/apt/archives/*")
         umount_chroot(rootfs_path)
     }
 }
