@@ -75,9 +75,9 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 trust $sudo parted {image_path} set {root_part} legacy_boot on$
             }
             device == "rdk-x5" {
-                $(echo n; echo p; echo {config_part}; echo "8192"; echo +256M; \
+                $(echo n; echo p; echo {config_part}; echo \"\"; echo +256M; \
                 echo t; echo "0c"; \
-                echo n; echo p; echo {root_part}; echo "557056"; echo \"\"; \
+                echo n; echo p; echo {root_part}; echo \"\"; echo \"\"; \
                 echo w) | fdisk {image_path} > /dev/null$ failed {
                     echo_error("create partition table error")
                 }
@@ -164,8 +164,8 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/config$
 
                 // rock 5b 用 github 做 apt 仓库，需要代理
-                trust $echo 'Acquire::https::Proxy \"http://10.20.42.187:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
-                trust $echo 'Acquire::http::Proxy \"http://10.20.42.187:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+                trust $echo 'Acquire::https::Proxy \"http://localhost:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+                trust $echo 'Acquire::http::Proxy \"http://localhost:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
                 run_command_in_chroot(get_tmp_path(), "apt update")
                 // debian dkms 加了 /etc/kernel 下的内容
                 trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
