@@ -76,7 +76,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
             }
             device == "rdk-x5" {
                 $(echo n; echo p; echo {config_part}; echo \"\"; echo +256M; \
-                echo t; echo "0c"; \
+                echo t; echo "c"; \
                 echo n; echo p; echo {root_part}; echo \"\"; echo \"\"; \
                 echo w) | fdisk {image_path} > /dev/null$ failed {
                     echo_error("create partition table error")
@@ -170,27 +170,35 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 // debian dkms 加了 /etc/kernel 下的内容
                 trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
                 run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
+                // 这里会 radxa-system-config-common 安装的 mimeapps.list 与 deepin-default-settings 中的冲突，这里使用 deepin 提供的，这里删除冲突文件重新压包
+                run_command_in_chroot(get_tmp_path(), "apt download --allow-unauthenticated radxa-system-config-common && \\
+                    dpkg-deb -R radxa-system-config-common*deb radxa-system-config-common  && \\
+                    rm radxa-system-config-commonrm/usr/share/applications/mimeapps.list && \\
+                    dpkg-deb -b radxa-system-config-common radxa-system-config-common.deb && \\
+                    apt install ./radxa-system-config-common.deb && \\
+                    rm radxa-system-config-common.deb")
+
                 run_command_in_chroot(get_tmp_path(), "apt install -y \\
                     radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
-                    rfkill \\
+                    rfkill mtd-utils \\
                     u-boot-tools efibootmgr systemd-boot apt-listchanges \\
                     pipewire-audio avahi-daemon")
                 run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
                 run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
+                run_command_in_chroot(get_tmp_path(), "dpkg --configure -a")
 
                 trust $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
             }
 
             run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
+            run_command_in_chroot(get_tmp_path(), "u-boot-update")
         }
         device == "rdk-x5" {
             // trust $sudo cp -r {device_config_path}/boot/* {get_tmp_path()}/boot 2>/dev/null$
             trust $sudo mkdir -p {get_tmp_path()}/boot/config$
-            trust $sudo mount {loop_device}p{config_part} {get_tmp_path()}/boot/config$
-            trust $sudo cp -r {device_config_path}/config/* {get_tmp_path()}/boot/config 2>/dev/null$
 
             run_command_in_chroot(get_tmp_path(), "apt update")
-            // hobot-boot 是 hobot 的依赖
+            // hobot-boot 是 hobot-utils 的依赖，这里 hobot-utils 也带了个 perf，这里用dpkg 强制覆盖掉 deepin 自带的 perf 命令
             run_command_in_chroot(get_tmp_path(), "apt install -y hobot-boot")
             // rdk-x5 不使用这个，先删除，
             run_command_in_chroot(get_tmp_path(), "apt download --allow-unauthenticated hobot-utils && dpkg -i --force-overwrite ./*.deb && rm ./*.deb")
@@ -200,8 +208,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 hobot-kernel-headers hobot-miniboot hobot-models-basic hobot-multimedia \\
                 hobot-multimedia-dev hobot-multimedia-samples hobot-sp-samples \\
                 hobot-spdev hobot-wifi")
-            // 覆盖掉原来忽略的gpg
-            trust $echo \"deb [signed-by=/usr/share/keyrings/sunrise.gpg] http://archive.d-robotics.cc/ubuntu-rdk-x5 jammy main\" | sudo tee {get_tmp_path()}/etc/apt/sources.list.d/sunrise.list > /dev/null$
+            run_command_in_chroot(get_tmp_path(), "rm /etc/apt/sources.list.d/rdk-x5.list")
             // 安装相关的包后 lightdm 会被禁用，这里允许启动
             run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
                 // hobot-utils
@@ -384,7 +391,7 @@ pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, dev
         }
     }
     // 清理 apt 缓存
-    run_command_in_chroot(get_tmp_path(), "apt clean")
+    run_command_in_chroot(get_tmp_path(), "apt clean && rm -rf /var/cache/apt/archives/*")
 
     umount_chroot(get_tmp_path())
 

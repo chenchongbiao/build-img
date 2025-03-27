@@ -48,7 +48,7 @@ make
 #### rock-5b
 
 ```bash
-./bimg build board -n "deepin" -d "beige" -c "main,commercial,community" -a "arm64" -s "deb https://community-packages.deepin.com/beige/ beige main commercial community" --device rock-5b
+./bimg build board -n "deepin" -d "beige" -c "main,commercial,community" -a "arm64" -s "deb https://community-packages.deepin.com/beige/ beige main commercial community,deb https://proposed-packages.deepin.com/beige-testing/ unstable/25 main commercial community" --device rock-5b
 ```
 
 #### RDK X5
