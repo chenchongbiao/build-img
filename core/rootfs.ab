@@ -41,13 +41,13 @@ pub fun create_rootfs_cache(distro_name, distro_version, components, arch, sourc
         "{split(sources, ",")}"$
 
     if base_type == "desktop" {
-        umount_chroot(rootfs_path)
         echo_info("mount chroot {rootfs_path}")
+        mount_chroot(rootfs_path)
         run_command_in_chroot(rootfs_path, "apt update")
         run_command_in_chroot(rootfs_path, "apt install -y \\
         {desktop_packages}")
         // 允许 lightdm 自启动
-        run_command_in_chroot(rootfs_path, "systemctl enable lightdme")
+        run_command_in_chroot(rootfs_path, "systemctl enable lightdm")
         run_command_in_chroot(rootfs_path, "apt clean && rm -rf /var/cache/apt/archives/*")
         umount_chroot(rootfs_path)
     }

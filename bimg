@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Written in [Amber](https://amber-lang.com/)
 # version: 0.4.0-alpha
-# date: 2025-03-27 09:44:26
+# date: 2025-04-08 16:21:01
 split__3_v0() {
     local text=$1
     local delimiter=$2
@@ -269,7 +269,7 @@ done
 run_command_in_chroot__140_v0() {
     local rootfs_path=$1
     local command=$2
-    export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
+    sudo env DEBIAN_FRONTEND=noninteractive chroot ${rootfs_path} bash -c "${command}";
     __AS=$?
 }
 # 创建 rootfs 缓存
@@ -309,12 +309,12 @@ fi
     sudo mmdebstrap         --hook-dir=/usr/share/mmdebstrap/hooks/merged-usr         --include=${include_packages}         --components=${components}         --variant=minbase         --architectures=${arch}         ${distro_version}         ${rootfs_path}         "${__AF_split3_v0__41_11[@]}";
     __AS=$?
     if [ $([ "_${base_type}" != "_desktop" ]; echo $?) != 0 ]; then
-        umount_chroot__139_v0 "${rootfs_path}";
-        __AF_umount_chroot139_v0__44_9="$__AF_umount_chroot139_v0";
-        echo "$__AF_umount_chroot139_v0__44_9" > /dev/null 2>&1
         echo_info__108_v0 "mount chroot ${rootfs_path}";
-        __AF_echo_info108_v0__45_9="$__AF_echo_info108_v0";
-        echo "$__AF_echo_info108_v0__45_9" > /dev/null 2>&1
+        __AF_echo_info108_v0__44_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__44_9" > /dev/null 2>&1
+        mount_chroot__138_v0 "${rootfs_path}";
+        __AF_mount_chroot138_v0__45_9="$__AF_mount_chroot138_v0";
+        echo "$__AF_mount_chroot138_v0__45_9" > /dev/null 2>&1
         run_command_in_chroot__140_v0 "${rootfs_path}" "apt update";
         __AF_run_command_in_chroot140_v0__46_9="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__46_9" > /dev/null 2>&1
@@ -323,7 +323,7 @@ fi
         __AF_run_command_in_chroot140_v0__47_9="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__47_9" > /dev/null 2>&1
         # 允许 lightdm 自启动
-        run_command_in_chroot__140_v0 "${rootfs_path}" "systemctl enable lightdme";
+        run_command_in_chroot__140_v0 "${rootfs_path}" "systemctl enable lightdm";
         __AF_run_command_in_chroot140_v0__50_9="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__50_9" > /dev/null 2>&1
         run_command_in_chroot__140_v0 "${rootfs_path}" "apt clean && rm -rf /var/cache/apt/archives/*";
@@ -375,7 +375,7 @@ fi
 run_command_in_chroot__157_v0() {
     local rootfs_path=$1
     local command=$2
-    export DEBIAN_FRONTEND=noninteractive &&     sudo chroot ${rootfs_path} /usr/bin/env bash -e -o pipefail -c "${command}";
+    sudo env DEBIAN_FRONTEND=noninteractive chroot ${rootfs_path} bash -c "${command}";
     __AS=$?
 }
 __AMBER_VAL_10=$(pwd);
@@ -757,20 +757,24 @@ fi
             __AS=$?
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__172_39="${__AF_get_tmp_path128_v0}";
-            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__172_39}" "apt reinstall -y --allow-downgrades /tmp/dkms.deb";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__172_39}" "apt reinstall -y --allow-downgrades /tmp/dkms.deb && rm /tmp/dkms.deb";
             __AF_run_command_in_chroot140_v0__172_17="$__AF_run_command_in_chroot140_v0";
             echo "$__AF_run_command_in_chroot140_v0__172_17" > /dev/null 2>&1
             # 这里会 radxa-system-config-common 安装的 mimeapps.list 与 deepin-default-settings 中的冲突，这里使用 deepin 提供的，这里删除冲突文件重新压包
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__174_39="${__AF_get_tmp_path128_v0}";
             run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__174_39}" "apt download --allow-unauthenticated radxa-system-config-common && \\
-                    dpkg-deb -R radxa-system-config-common*deb radxa-system-config-common  && \\
-                    rm radxa-system-config-commonrm/usr/share/applications/mimeapps.list && \\
+                    dpkg-deb -R radxa-system-config-common*deb radxa-system-config-common && \\
+                    rm radxa-system-config-common/usr/share/applications/mimeapps.list && \\
                     dpkg-deb -b radxa-system-config-common radxa-system-config-common.deb && \\
-                    apt install ./radxa-system-config-common.deb && \\
-                    rm radxa-system-config-common.deb";
+                    apt install /radxa-system-config-common.deb";
             __AF_run_command_in_chroot140_v0__174_17="$__AF_run_command_in_chroot140_v0";
             echo "$__AF_run_command_in_chroot140_v0__174_17" > /dev/null 2>&1
+            get_tmp_path__128_v0 ;
+            __AF_get_tmp_path128_v0__179_39="${__AF_get_tmp_path128_v0}";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__179_39}" "rm -rf /radxa-system-config-common*";
+            __AF_run_command_in_chroot140_v0__179_17="$__AF_run_command_in_chroot140_v0";
+            echo "$__AF_run_command_in_chroot140_v0__179_17" > /dev/null 2>&1
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__181_39="${__AF_get_tmp_path128_v0}";
             run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__181_39}" "apt install -y \\
@@ -782,17 +786,17 @@ fi
             echo "$__AF_run_command_in_chroot140_v0__181_17" > /dev/null 2>&1
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__186_39="${__AF_get_tmp_path128_v0}";
-            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__186_39}" "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__186_39}" "apt install -y rsetup-config-first-boot && dpkg --configure -a";
             __AF_run_command_in_chroot140_v0__186_17="$__AF_run_command_in_chroot140_v0";
             echo "$__AF_run_command_in_chroot140_v0__186_17" > /dev/null 2>&1
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__187_39="${__AF_get_tmp_path128_v0}";
-            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__187_39}" "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__187_39}" "apt install -y radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b";
             __AF_run_command_in_chroot140_v0__187_17="$__AF_run_command_in_chroot140_v0";
             echo "$__AF_run_command_in_chroot140_v0__187_17" > /dev/null 2>&1
             get_tmp_path__128_v0 ;
             __AF_get_tmp_path128_v0__188_39="${__AF_get_tmp_path128_v0}";
-            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__188_39}" "dpkg --configure -a";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__188_39}" "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b";
             __AF_run_command_in_chroot140_v0__188_17="$__AF_run_command_in_chroot140_v0";
             echo "$__AF_run_command_in_chroot140_v0__188_17" > /dev/null 2>&1
             get_tmp_path__128_v0 ;
@@ -805,11 +809,7 @@ fi
         run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__193_35}" "cd /usr/lib/u-boot/${device} && ./setup.sh update_bootloader ${loop_device} rk3588";
         __AF_run_command_in_chroot140_v0__193_13="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__193_13" > /dev/null 2>&1
-        get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__194_35="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__194_35}" "u-boot-update";
-        __AF_run_command_in_chroot140_v0__194_13="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__194_13" > /dev/null 2>&1
+        # run_command_in_chroot(get_tmp_path(), "u-boot-update")
 elif [ $([ "_${device}" != "_rdk-x5" ]; echo $?) != 0 ]; then
         # trust $sudo cp -r {device_config_path}/boot/* {get_tmp_path()}/boot 2>/dev/null$
         get_tmp_path__128_v0 ;
@@ -848,12 +848,6 @@ elif [ $([ "_${device}" != "_rdk-x5" ]; echo $?) != 0 ]; then
         run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__211_35}" "rm /etc/apt/sources.list.d/rdk-x5.list";
         __AF_run_command_in_chroot140_v0__211_13="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__211_13" > /dev/null 2>&1
-        # 安装相关的包后 lightdm 会被禁用，这里允许启动
-        get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__213_35="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__213_35}" "systemctl enable lightdm";
-        __AF_run_command_in_chroot140_v0__213_13="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__213_13" > /dev/null 2>&1
         # hobot-utils
         # tros-humble-clip-encode-text tros-humble-clip-msgs tros-humble-hobot-audio tros-humble-hobot-codec \\
         # tros-humble-hobot-cv tros-humble-hobot-dosod tros-humble-hobot-falldown-detection \\
@@ -866,41 +860,41 @@ fi
         if [ $([ "_${arch}" != "_amd64" ]; echo $?) != 0 ]; then
             # 安装内核
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__228_39="${__AF_get_tmp_path128_v0}";
-            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__228_39}" "apt update && apt install -y linux-{image,headers}-6.6.71-amd64-desktop-hwe";
-            __AF_run_command_in_chroot140_v0__228_17="$__AF_run_command_in_chroot140_v0";
-            echo "$__AF_run_command_in_chroot140_v0__228_17" > /dev/null 2>&1
+            __AF_get_tmp_path128_v0__226_39="${__AF_get_tmp_path128_v0}";
+            run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__226_39}" "apt update && apt install -y linux-{image,headers}-6.6.71-amd64-desktop-hwe";
+            __AF_run_command_in_chroot140_v0__226_17="$__AF_run_command_in_chroot140_v0";
+            echo "$__AF_run_command_in_chroot140_v0__226_17" > /dev/null 2>&1
 fi
 fi
     echo_info__108_v0 "generate /etc/fstab";
-    __AF_echo_info108_v0__233_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__233_5" > /dev/null 2>&1
+    __AF_echo_info108_v0__231_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__231_5" > /dev/null 2>&1
     __AMBER_VAL_17=$(sudo blkid -s UUID -o value ${loop_device}p${root_part});
     __AS=$?;
     local root_part_uuid="${__AMBER_VAL_17}"
     echo_info__108_v0 "root uuid: ${root_part_uuid}";
-    __AF_echo_info108_v0__235_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__235_5" > /dev/null 2>&1
+    __AF_echo_info108_v0__233_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__233_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__236_113="${__AF_get_tmp_path128_v0}";
-    echo "UUID=${root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1" | sudo tee ${__AF_get_tmp_path128_v0__236_113}/etc/fstab > /dev/null;
+    __AF_get_tmp_path128_v0__234_113="${__AF_get_tmp_path128_v0}";
+    echo "UUID=${root_part_uuid} / ext4 defaults,rw,errors=remount-ro,x-systemd.growfs 0 1" | sudo tee ${__AF_get_tmp_path128_v0__234_113}/etc/fstab > /dev/null;
     __AS=$?
     if [ $(echo ${config_part} '>' 0 | bc -l | sed '/\./ s/\.\{0,1\}0\{1,\}$//') != 0 ]; then
         __AMBER_VAL_18=$(sudo blkid -s UUID -o value ${loop_device}p${config_part});
         __AS=$?;
         local config_part_uuid="${__AMBER_VAL_18}"
         echo_info__108_v0 "config uuid: ${config_part_uuid}";
-        __AF_echo_info108_v0__239_9="$__AF_echo_info108_v0";
-        echo "$__AF_echo_info108_v0__239_9" > /dev/null 2>&1
+        __AF_echo_info108_v0__237_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__237_9" > /dev/null 2>&1
         if [ $([ "_${device}" != "_rock-5b" ]; echo $?) != 0 ]; then
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__242_118="${__AF_get_tmp_path128_v0}";
-            echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__242_118}/etc/fstab > /dev/null;
+            __AF_get_tmp_path128_v0__240_118="${__AF_get_tmp_path128_v0}";
+            echo "UUID=${config_part_uuid} /config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__240_118}/etc/fstab > /dev/null;
             __AS=$?
 elif [ $([ "_${device}" != "_rdk-x5" ]; echo $?) != 0 ]; then
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__245_123="${__AF_get_tmp_path128_v0}";
-            echo "UUID=${config_part_uuid} /boot/config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__245_123}/etc/fstab > /dev/null;
+            __AF_get_tmp_path128_v0__243_123="${__AF_get_tmp_path128_v0}";
+            echo "UUID=${config_part_uuid} /boot/config vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__243_123}/etc/fstab > /dev/null;
             __AS=$?
 fi
 fi
@@ -909,115 +903,121 @@ fi
         __AS=$?;
         local uefi_part_uuid="${__AMBER_VAL_19}"
         echo_info__108_v0 "efi uuid: ${uefi_part_uuid}";
-        __AF_echo_info108_v0__251_9="$__AF_echo_info108_v0";
-        echo "$__AF_echo_info108_v0__251_9" > /dev/null 2>&1
+        __AF_echo_info108_v0__249_9="$__AF_echo_info108_v0";
+        echo "$__AF_echo_info108_v0__249_9" > /dev/null 2>&1
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__252_110="${__AF_get_tmp_path128_v0}";
-        echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__252_110}/etc/fstab > /dev/null;
+        __AF_get_tmp_path128_v0__250_110="${__AF_get_tmp_path128_v0}";
+        echo "UUID=${uefi_part_uuid} /boot/efi vfat defaults,x-systemd.automount 0 2" | sudo tee -a ${__AF_get_tmp_path128_v0__250_110}/etc/fstab > /dev/null;
         __AS=$?
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__253_64="${__AF_get_tmp_path128_v0}";
-        sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path128_v0__253_64}/boot/grub/grub.cfg 2>/dev/null;
+        __AF_get_tmp_path128_v0__251_64="${__AF_get_tmp_path128_v0}";
+        sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path128_v0__251_64}/boot/grub/grub.cfg 2>/dev/null;
         __AS=$?
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__254_64="${__AF_get_tmp_path128_v0}";
-        sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path128_v0__254_64}/boot/efi/EFI/{boot,deepin}/grub.cfg 2>/dev/null;
+        __AF_get_tmp_path128_v0__252_64="${__AF_get_tmp_path128_v0}";
+        sudo sed -i "s/root_uuid/${root_part_uuid}/g" ${__AF_get_tmp_path128_v0__252_64}/boot/efi/EFI/{boot,deepin}/grub.cfg 2>/dev/null;
         __AS=$?
         # rock-5b 的 u-boot-update 在更新的时候，不知道为啥会把宿主机的 UUID 识别成根，不过在结束构建后重新挂载，再使用命令又可以识别正常。这里直接 sed 替换
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__257_31="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__257_31}" "sed -i 's/UUID=[0-9a-fA-F]\\{8\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{12\\}/UUID=${root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null";
-        __AF_run_command_in_chroot140_v0__257_9="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__257_9" > /dev/null 2>&1
+        __AF_get_tmp_path128_v0__255_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__255_31}" "sed -i 's/UUID=[0-9a-fA-F]\\{8\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{4\\}-[0-9a-fA-F]\\{12\\}/UUID=${root_part_uuid}/' /boot/extlinux/extlinux.conf 2>/dev/null";
+        __AF_run_command_in_chroot140_v0__255_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__255_9" > /dev/null 2>&1
 fi
     # 添加自动扩容，配合 /etc/fstab x-systemd.growfs
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__261_27="${__AF_get_tmp_path128_v0}";
-    sudo mkdir -p ${__AF_get_tmp_path128_v0__261_27}/etc/repart.d;
+    __AF_get_tmp_path128_v0__259_27="${__AF_get_tmp_path128_v0}";
+    sudo mkdir -p ${__AF_get_tmp_path128_v0__259_27}/etc/repart.d;
     __AS=$?
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__262_45="${__AF_get_tmp_path128_v0}";
-    echo "[Partition]" | sudo tee ${__AF_get_tmp_path128_v0__262_45}/etc/repart.d/growroot.conf > /dev/null;
+    __AF_get_tmp_path128_v0__260_45="${__AF_get_tmp_path128_v0}";
+    echo "[Partition]" | sudo tee ${__AF_get_tmp_path128_v0__260_45}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__263_55="${__AF_get_tmp_path128_v0}";
-    echo "Type=linux-generic" | sudo tee -a ${__AF_get_tmp_path128_v0__263_55}/etc/repart.d/growroot.conf > /dev/null;
+    __AF_get_tmp_path128_v0__261_55="${__AF_get_tmp_path128_v0}";
+    echo "Type=linux-generic" | sudo tee -a ${__AF_get_tmp_path128_v0__261_55}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__264_56="${__AF_get_tmp_path128_v0}";
-    echo "GrowFileSystem=true" | sudo tee -a ${__AF_get_tmp_path128_v0__264_56}/etc/repart.d/growroot.conf > /dev/null;
+    __AF_get_tmp_path128_v0__262_56="${__AF_get_tmp_path128_v0}";
+    echo "GrowFileSystem=true" | sudo tee -a ${__AF_get_tmp_path128_v0__262_56}/etc/repart.d/growroot.conf > /dev/null;
     __AS=$?
     echo_info__108_v0 "set hostname";
-    __AF_echo_info108_v0__266_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__266_5" > /dev/null 2>&1
+    __AF_echo_info108_v0__264_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__264_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__267_56="${__AF_get_tmp_path128_v0}";
-    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path128_v0__267_56}/etc/hostname > /dev/null;
+    __AF_get_tmp_path128_v0__265_56="${__AF_get_tmp_path128_v0}";
+    echo "deepin-${arch}-${device}" | sudo tee ${__AF_get_tmp_path128_v0__265_56}/etc/hostname > /dev/null;
     __AS=$?
     echo_info__108_v0 "update-initramfs -u";
-    __AF_echo_info108_v0__269_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__269_5" > /dev/null 2>&1
+    __AF_echo_info108_v0__267_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__267_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__270_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__270_27}" "update-initramfs -u";
-    __AF_run_command_in_chroot140_v0__270_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__270_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__268_27="${__AF_get_tmp_path128_v0}";
+    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__268_27}" "update-initramfs -u";
+    __AF_run_command_in_chroot140_v0__268_5="$__AF_run_command_in_chroot140_v0";
+    echo "$__AF_run_command_in_chroot140_v0__268_5" > /dev/null 2>&1
     if [ $([ "_${device}" != "_rock-5b" ]; echo $?) != 0 ]; then
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__273_52="${__AF_get_tmp_path128_v0}";
-        echo "usb_storage" | sudo tee -a ${__AF_get_tmp_path128_v0__273_52}/etc/modules > /dev/null;
+        __AF_get_tmp_path128_v0__271_52="${__AF_get_tmp_path128_v0}";
+        echo "usb_storage" | sudo tee -a ${__AF_get_tmp_path128_v0__271_52}/etc/modules > /dev/null;
         __AS=$?
         # rock5b 把一些内核模块用xz压缩了，不知道为啥不能正确解压，这里将ko解压
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__275_31="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__275_31}" "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d {} +";
-        __AF_run_command_in_chroot140_v0__275_9="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__275_9" > /dev/null 2>&1
+        __AF_get_tmp_path128_v0__273_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__273_31}" "find /lib/modules -type f -name \"*.ko.xz\" -execdir xz -d {} +";
+        __AF_run_command_in_chroot140_v0__273_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__273_9" > /dev/null 2>&1
 fi
     if [ $([ "_${device}" == "_rock-5b" ]; echo $?) != 0 ]; then
         if [ $([ "_${base_type}" != "_desktop" ]; echo $?) != 0 ]; then
             # 配置 deepin-installer
             get_config_path__134_v0 ;
-            __AF_get_config_path134_v0__281_37="${__AF_get_config_path134_v0}";
+            __AF_get_config_path134_v0__279_37="${__AF_get_config_path134_v0}";
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__281_96="${__AF_get_tmp_path128_v0}";
-            sudo install -D ${__AF_get_config_path134_v0__281_37}/deepin-installer/deepin-installer.conf ${__AF_get_tmp_path128_v0__281_96}/etc/deepin-installer/deepin-installer.conf;
+            __AF_get_tmp_path128_v0__279_96="${__AF_get_tmp_path128_v0}";
+            sudo install -D ${__AF_get_config_path134_v0__279_37}/deepin-installer/deepin-installer.conf ${__AF_get_tmp_path128_v0__279_96}/etc/deepin-installer/deepin-installer.conf;
             __AS=$?
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__282_63="${__AF_get_tmp_path128_v0}";
-            echo -n 'apt_source_deb="' | sudo tee -a ${__AF_get_tmp_path128_v0__282_63}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AF_get_tmp_path128_v0__280_63="${__AF_get_tmp_path128_v0}";
+            echo -n 'apt_source_deb="' | sudo tee -a ${__AF_get_tmp_path128_v0__280_63}/etc/deepin-installer/deepin-installer.conf > /dev/null;
             __AS=$?
             # TODO 循环多个源拼接
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__284_60="${__AF_get_tmp_path128_v0}";
-            echo -n "${sources}\\n" | sudo tee -a ${__AF_get_tmp_path128_v0__284_60}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AF_get_tmp_path128_v0__282_60="${__AF_get_tmp_path128_v0}";
+            echo -n "${sources}\\n" | sudo tee -a ${__AF_get_tmp_path128_v0__282_60}/etc/deepin-installer/deepin-installer.conf > /dev/null;
             __AS=$?
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__285_47="${__AF_get_tmp_path128_v0}";
-            echo -n '"' | sudo tee -a ${__AF_get_tmp_path128_v0__285_47}/etc/deepin-installer/deepin-installer.conf > /dev/null;
+            __AF_get_tmp_path128_v0__283_47="${__AF_get_tmp_path128_v0}";
+            echo -n '"' | sudo tee -a ${__AF_get_tmp_path128_v0__283_47}/etc/deepin-installer/deepin-installer.conf > /dev/null;
             __AS=$?
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__287_71="${__AF_get_tmp_path128_v0}";
-            sudo ln -s ../deepin-installer-first-boot.service ${__AF_get_tmp_path128_v0__287_71}/usr/lib/systemd/system/multi-user.target.wants/deepin-installer-first-boot.service;
+            __AF_get_tmp_path128_v0__285_71="${__AF_get_tmp_path128_v0}";
+            sudo ln -s ../deepin-installer-first-boot.service ${__AF_get_tmp_path128_v0__285_71}/usr/lib/systemd/system/multi-user.target.wants/deepin-installer-first-boot.service;
             __AS=$?
             get_tmp_path__128_v0 ;
-            __AF_get_tmp_path128_v0__288_32="${__AF_get_tmp_path128_v0}";
-            sudo rm -f ${__AF_get_tmp_path128_v0__288_32}/usr/lib/systemd/system/deepin-installer.service;
+            __AF_get_tmp_path128_v0__286_32="${__AF_get_tmp_path128_v0}";
+            sudo rm -f ${__AF_get_tmp_path128_v0__286_32}/usr/lib/systemd/system/deepin-installer.service;
             __AS=$?
 fi
         get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__288_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__288_31}" "useradd  -s /bin/bash -m -g users deepin";
+        __AF_run_command_in_chroot140_v0__288_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__288_9" > /dev/null 2>&1
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__289_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__289_31}" "usermod -a -G sudo deepin";
+        __AF_run_command_in_chroot140_v0__289_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__289_9" > /dev/null 2>&1
+        get_tmp_path__128_v0 ;
         __AF_get_tmp_path128_v0__290_31="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__290_31}" "useradd  -s /bin/bash -m -g users deepin";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__290_31}" "echo deepin:deepin | chpasswd";
         __AF_run_command_in_chroot140_v0__290_9="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__290_9" > /dev/null 2>&1
-        get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__291_31="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__291_31}" "usermod -a -G sudo deepin";
-        __AF_run_command_in_chroot140_v0__291_9="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__291_9" > /dev/null 2>&1
+        # 安装相关的包后 lightdm 会被禁用，这里允许启动
         get_tmp_path__128_v0 ;
         __AF_get_tmp_path128_v0__292_31="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__292_31}" "echo deepin:deepin | chpasswd";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__292_31}" "systemctl enable lightdm";
         __AF_run_command_in_chroot140_v0__292_9="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__292_9" > /dev/null 2>&1
 fi
@@ -1046,7 +1046,7 @@ fi
     __AF_echo_success109_v0__303_5="$__AF_echo_success109_v0";
     echo "$__AF_echo_success109_v0__303_5" > /dev/null 2>&1
 }
-create_livecd__236_v0() {
+create_iso__236_v0() {
     local distro_name=$1
     local distro_version=$2
     local arch=$3
@@ -1197,98 +1197,106 @@ fi
         echo_info__108_v0 "remove org.deepin.browser.desktop from ${__AF_get_tmp_path128_v0__360_60}/etc/skel/Desktop";
         __AF_echo_info108_v0__360_9="$__AF_echo_info108_v0";
         echo "$__AF_echo_info108_v0__360_9" > /dev/null 2>&1
+        # 删除给磐石准备的ostree初始化脚本
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__362_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__362_31}" "apt install -y deepin-installer";
+        __AF_run_command_in_chroot140_v0__362_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__362_9" > /dev/null 2>&1
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__363_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__363_31}" "rm /usr/share/deepin-installer/tools/hooks/before_chroot/09_ostree_sys_init.job";
+        __AF_run_command_in_chroot140_v0__363_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__363_9" > /dev/null 2>&1
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__364_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__364_31}" "rm /usr/share/deepin-installer/tools/hooks/before_chroot/10_ostree_persistent_init.job";
+        __AF_run_command_in_chroot140_v0__364_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__364_9" > /dev/null 2>&1
+        # 删除循环，不知道为啥，直接进入安装器的界面，会因为kwin合成器没有打开导致一直卡循环上。在试用模式选择安装器打开的能正常试用。
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__367_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__367_31}" "sed -i '43,46d' /usr/share/deepin-installer/tools/deepin-installer-core";
+        __AF_run_command_in_chroot140_v0__367_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__367_9" > /dev/null 2>&1
+        # 安装相关的包后 lightdm 会被禁用，这里允许启动
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__370_31="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__370_31}" "systemctl enable lightdm";
+        __AF_run_command_in_chroot140_v0__370_9="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__370_9" > /dev/null 2>&1
 fi
-    # 添加 deepin 用户
-    echo_info__108_v0 "add user";
-    __AF_echo_info108_v0__364_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__364_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__365_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__365_27}" "useradd -s /bin/bash -m -g users deepin";
-    __AF_run_command_in_chroot140_v0__365_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__365_5" > /dev/null 2>&1
-    get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__366_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__366_27}" "usermod -a -G sudo deepin";
-    __AF_run_command_in_chroot140_v0__366_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__366_5" > /dev/null 2>&1
-    get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__367_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__367_27}" "echo deepin:deepin | chpasswd";
-    __AF_run_command_in_chroot140_v0__367_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__367_5" > /dev/null 2>&1
-    # 允许 root 远程登录
-    get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__370_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__370_27}" "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config";
-    __AF_run_command_in_chroot140_v0__370_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__370_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__373_27="${__AF_get_tmp_path128_v0}";
+    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__373_27}" "echo root:deepin | chpasswd";
+    __AF_run_command_in_chroot140_v0__373_5="$__AF_run_command_in_chroot140_v0";
+    echo "$__AF_run_command_in_chroot140_v0__373_5" > /dev/null 2>&1
     echo_info__108_v0 "set hostname";
-    __AF_echo_info108_v0__372_5="$__AF_echo_info108_v0";
-    echo "$__AF_echo_info108_v0__372_5" > /dev/null 2>&1
-    get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__373_47="${__AF_get_tmp_path128_v0}";
-    echo "deepin-${arch}" | sudo tee ${__AF_get_tmp_path128_v0__373_47}/etc/hostname > /dev/null;
-    __AS=$?
-    echo_info__108_v0 "set locale";
     __AF_echo_info108_v0__375_5="$__AF_echo_info108_v0";
     echo "$__AF_echo_info108_v0__375_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__376_50="${__AF_get_tmp_path128_v0}";
-    echo "LANG=zh_CN.UTF-8" | sudo tee ${__AF_get_tmp_path128_v0__376_50}/etc/locale.conf > /dev/null;
+    __AF_get_tmp_path128_v0__376_47="${__AF_get_tmp_path128_v0}";
+    echo "deepin-${arch}" | sudo tee ${__AF_get_tmp_path128_v0__376_47}/etc/hostname > /dev/null;
     __AS=$?
-    get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__377_51="${__AF_get_tmp_path128_v0}";
-    echo "LANGUAGE=zh_CN" | sudo tee -a ${__AF_get_tmp_path128_v0__377_51}/etc/locale.conf > /dev/null;
-    __AS=$?
+    echo_info__108_v0 "set locale";
+    __AF_echo_info108_v0__378_5="$__AF_echo_info108_v0";
+    echo "$__AF_echo_info108_v0__378_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
     __AF_get_tmp_path128_v0__379_50="${__AF_get_tmp_path128_v0}";
-    echo "LANG=zh_CN.UTF-8" | sudo tee ${__AF_get_tmp_path128_v0__379_50}/etc/environment.d/locale.conf > /dev/null;
+    echo "LANG=zh_CN.UTF-8" | sudo tee ${__AF_get_tmp_path128_v0__379_50}/etc/locale.conf > /dev/null;
     __AS=$?
     get_tmp_path__128_v0 ;
     __AF_get_tmp_path128_v0__380_51="${__AF_get_tmp_path128_v0}";
-    echo "LANGUAGE=zh_CN" | sudo tee -a ${__AF_get_tmp_path128_v0__380_51}/etc/environment.d/locale.conf > /dev/null;
+    echo "LANGUAGE=zh_CN" | sudo tee -a ${__AF_get_tmp_path128_v0__380_51}/etc/locale.conf > /dev/null;
     __AS=$?
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__382_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__382_27}" "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config";
-    __AF_run_command_in_chroot140_v0__382_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__382_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__382_50="${__AF_get_tmp_path128_v0}";
+    echo "LANG=zh_CN.UTF-8" | sudo tee ${__AF_get_tmp_path128_v0__382_50}/etc/environment.d/locale.conf > /dev/null;
+    __AS=$?
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__384_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__384_27}" "apt purge -y isolinux";
-    __AF_run_command_in_chroot140_v0__384_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__384_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__383_51="${__AF_get_tmp_path128_v0}";
+    echo "LANGUAGE=zh_CN" | sudo tee -a ${__AF_get_tmp_path128_v0__383_51}/etc/environment.d/locale.conf > /dev/null;
+    __AS=$?
+    get_tmp_path__128_v0 ;
+    __AF_get_tmp_path128_v0__385_27="${__AF_get_tmp_path128_v0}";
+    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__385_27}" "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config";
+    __AF_run_command_in_chroot140_v0__385_5="$__AF_run_command_in_chroot140_v0";
+    echo "$__AF_run_command_in_chroot140_v0__385_5" > /dev/null 2>&1
+    get_tmp_path__128_v0 ;
+    __AF_get_tmp_path128_v0__387_27="${__AF_get_tmp_path128_v0}";
+    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__387_27}" "apt purge -y isolinux";
+    __AF_run_command_in_chroot140_v0__387_5="$__AF_run_command_in_chroot140_v0";
+    echo "$__AF_run_command_in_chroot140_v0__387_5" > /dev/null 2>&1
     if [ $([ "_${arch}" != "_amd64" ]; echo $?) != 0 ]; then
         get_tmp_path__128_v0 ;
-        __AF_get_tmp_path128_v0__387_35="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__387_35}" "apt purge -y grub-efi-amd64-bin";
-        __AF_run_command_in_chroot140_v0__387_13="$__AF_run_command_in_chroot140_v0";
-        echo "$__AF_run_command_in_chroot140_v0__387_13" > /dev/null 2>&1
-elif [ $([ "_${arch}" != "_arm64" ]; echo $?) != 0 ]; then
-        get_tmp_path__128_v0 ;
         __AF_get_tmp_path128_v0__390_35="${__AF_get_tmp_path128_v0}";
-        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__390_35}" "apt purge -y grub-efi-arm64-bin";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__390_35}" "apt purge -y grub-efi-amd64-bin";
         __AF_run_command_in_chroot140_v0__390_13="$__AF_run_command_in_chroot140_v0";
         echo "$__AF_run_command_in_chroot140_v0__390_13" > /dev/null 2>&1
+elif [ $([ "_${arch}" != "_arm64" ]; echo $?) != 0 ]; then
+        get_tmp_path__128_v0 ;
+        __AF_get_tmp_path128_v0__393_35="${__AF_get_tmp_path128_v0}";
+        run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__393_35}" "apt purge -y grub-efi-arm64-bin";
+        __AF_run_command_in_chroot140_v0__393_13="$__AF_run_command_in_chroot140_v0";
+        echo "$__AF_run_command_in_chroot140_v0__393_13" > /dev/null 2>&1
 fi
     # 清理 apt 缓存
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__394_27="${__AF_get_tmp_path128_v0}";
-    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__394_27}" "apt clean && rm -rf /var/cache/apt/archives/*";
-    __AF_run_command_in_chroot140_v0__394_5="$__AF_run_command_in_chroot140_v0";
-    echo "$__AF_run_command_in_chroot140_v0__394_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__397_27="${__AF_get_tmp_path128_v0}";
+    run_command_in_chroot__140_v0 "${__AF_get_tmp_path128_v0__397_27}" "apt clean && rm -rf /var/cache/apt/archives/*";
+    __AF_run_command_in_chroot140_v0__397_5="$__AF_run_command_in_chroot140_v0";
+    echo "$__AF_run_command_in_chroot140_v0__397_5" > /dev/null 2>&1
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__396_19="${__AF_get_tmp_path128_v0}";
-    umount_chroot__139_v0 "${__AF_get_tmp_path128_v0__396_19}";
-    __AF_umount_chroot139_v0__396_5="$__AF_umount_chroot139_v0";
-    echo "$__AF_umount_chroot139_v0__396_5" > /dev/null 2>&1
+    __AF_get_tmp_path128_v0__399_19="${__AF_get_tmp_path128_v0}";
+    umount_chroot__139_v0 "${__AF_get_tmp_path128_v0__399_19}";
+    __AF_umount_chroot139_v0__399_5="$__AF_umount_chroot139_v0";
+    echo "$__AF_umount_chroot139_v0__399_5" > /dev/null 2>&1
     # 修改完根文件系统之后，就可以把它压缩为squashfs了
     # /boot目录排除了，这是因为系统启动的时候会先读取/boot下面的内核等，最后才挂载根文件系统，因此/boot目录不能放到根文件系统里，而是另外放。
     get_tmp_path__128_v0 ;
-    __AF_get_tmp_path128_v0__401_6="${__AF_get_tmp_path128_v0}";
+    __AF_get_tmp_path128_v0__404_6="${__AF_get_tmp_path128_v0}";
     sudo mksquashfs \
-    ${__AF_get_tmp_path128_v0__401_6} \
+    ${__AF_get_tmp_path128_v0__404_6} \
     ${staging}/live/filesystem.squashfs \
     -e boot;
     __AS=$?
@@ -1322,8 +1330,8 @@ LABEL linux
   APPEND initrd=/live/initrd boot=live nomodeset"
     file_write__35_v0 "${isolinux_cfg}" "${text}";
     __AS=$?;
-    __AF_file_write35_v0__433_11="${__AF_file_write35_v0}";
-    echo "${__AF_file_write35_v0__433_11}" > /dev/null 2>&1
+    __AF_file_write35_v0__436_11="${__AF_file_write35_v0}";
+    echo "${__AF_file_write35_v0__436_11}" > /dev/null 2>&1
     local grub_cfg="${staging}/boot/grub/grub.cfg"
     text="search --set=root --label deepin
 
@@ -1334,30 +1342,32 @@ set timeout=30
 
 menuentry \"deepin Live [EFI/GRUB]\" {
     insmod all_video
-    linux (\$root)/live/vmlinuz boot=live
+    set gfxpayload=keep
+    linux (\$root)/live/vmlinuz boot=live union=overlay locales=zh_CN.UTF-8 console=tty splash --
     initrd (\$root)/live/initrd
 }
 
 menuentry \"deepin Live [EFI/GRUB] (nomodeset)\" {
     insmod all_video
-    linux (\$root)/live/vmlinuz boot=live nomodeset
+    set gfxpayload=keep
+    linux (\$root)/live/vmlinuz boot=live union=overlay locales=zh_CN.UTF-8 console=tty splash -- nomodeset
     initrd (\$root)/live/initrd
 }"
     # 其中insmod all_video可以解决no suitable video mode found的问题：https://lists.gnu.org/archive/html/help-grub/2018-01/msg00009.html
     file_write__35_v0 "${grub_cfg}" "${text}";
     __AS=$?;
-    __AF_file_write35_v0__455_11="${__AF_file_write35_v0}";
-    echo "${__AF_file_write35_v0__455_11}" > /dev/null 2>&1
+    __AF_file_write35_v0__460_11="${__AF_file_write35_v0}";
+    echo "${__AF_file_write35_v0__460_11}" > /dev/null 2>&1
     get_livecd_path__129_v0 ;
-    __AF_get_livecd_path129_v0__457_33="${__AF_get_livecd_path129_v0}";
-    local grub_standalone_cfg="${__AF_get_livecd_path129_v0__457_33}/tmp/grub-standalone.cfg"
+    __AF_get_livecd_path129_v0__462_33="${__AF_get_livecd_path129_v0}";
+    local grub_standalone_cfg="${__AF_get_livecd_path129_v0__462_33}/tmp/grub-standalone.cfg"
     text="search --set=root --label deepin
 set prefix=(\$root)/boot/grub/
 configfile /boot/grub/grub.cfg"
     file_write__35_v0 "${grub_standalone_cfg}" "${text}";
     __AS=$?;
-    __AF_file_write35_v0__461_11="${__AF_file_write35_v0}";
-    echo "${__AF_file_write35_v0__461_11}" > /dev/null 2>&1
+    __AF_file_write35_v0__466_11="${__AF_file_write35_v0}";
+    echo "${__AF_file_write35_v0__466_11}" > /dev/null 2>&1
     # 创建一个独立的GRUB2 EFI可执行文件
     local boot_efi_file=""
     if [ $([ "_${arch}" != "_amd64" ]; echo $?) != 0 ]; then
@@ -1367,10 +1377,10 @@ elif [ $([ "_${arch}" != "_arm64" ]; echo $?) != 0 ]; then
         boot_efi_file="bootaa64.efi"
 fi
     get_livecd_path__129_v0 ;
-    __AF_get_livecd_path129_v0__476_15="${__AF_get_livecd_path129_v0}";
+    __AF_get_livecd_path129_v0__481_15="${__AF_get_livecd_path129_v0}";
     grub-mkstandalone \
     --format=${arch_efi} \
-    --output=${__AF_get_livecd_path129_v0__476_15}/tmp/${boot_efi_file} \
+    --output=${__AF_get_livecd_path129_v0__481_15}/tmp/${boot_efi_file} \
     --locales="" \
     --fonts="" \
     "boot/grub/grub.cfg=${grub_standalone_cfg}";
@@ -1384,24 +1394,24 @@ fi
     mmd -i ${efi_boot_img} efi efi/boot;
     __AS=$?
     get_livecd_path__129_v0 ;
-    __AF_get_livecd_path129_v0__486_38="${__AF_get_livecd_path129_v0}";
-    mcopy -vi ${efi_boot_img} ${__AF_get_livecd_path129_v0__486_38}/tmp/${boot_efi_file} ::efi/boot/;
+    __AF_get_livecd_path129_v0__491_38="${__AF_get_livecd_path129_v0}";
+    mcopy -vi ${efi_boot_img} ${__AF_get_livecd_path129_v0__491_38}/tmp/${boot_efi_file} ::efi/boot/;
     __AS=$?
     get_output_path__124_v0 ;
-    __AF_get_output_path124_v0__488_22="${__AF_get_output_path124_v0}";
-    local iso_path="${__AF_get_output_path124_v0__488_22}/deepin-custom-${arch}.iso"
+    __AF_get_output_path124_v0__493_22="${__AF_get_output_path124_v0}";
+    local iso_path="${__AF_get_output_path124_v0__493_22}/deepin-custom-${arch}.iso"
     # 生成 iso
     rm ${iso_path};
     __AS=$?
     get_livecd_path__129_v0 ;
-    __AF_get_livecd_path129_v0__497_21="${__AF_get_livecd_path129_v0}";
+    __AF_get_livecd_path129_v0__502_21="${__AF_get_livecd_path129_v0}";
     xorriso \
     -as mkisofs \
     -iso-level 3 \
     -o ${iso_path} \
     -full-iso9660-filenames \
     -volid "deepin" \
-    -isohybrid-mbr ${__AF_get_livecd_path129_v0__497_21}/tmp/isohdpfx.bin \
+    -isohybrid-mbr ${__AF_get_livecd_path129_v0__502_21}/tmp/isohdpfx.bin \
     -eltorito-boot \
         isolinux/isolinux.bin \
         -no-emul-boot \
@@ -1481,10 +1491,10 @@ fi
         create_image__235_v0 "${distro_name}" "${distro_version}" "${arch}" "${sources}" "${base_type}" "${device}" "${image_size}";
         __AF_create_image235_v0__34_13="$__AF_create_image235_v0";
         echo "$__AF_create_image235_v0__34_13" > /dev/null 2>&1
-elif [ $([ "_${build_tag}" != "_livecd" ]; echo $?) != 0 ]; then
-        create_livecd__236_v0 "${distro_name}" "${distro_version}" "${arch}" "${sources}" "${base_type}" "${device}";
-        __AF_create_livecd236_v0__37_13="$__AF_create_livecd236_v0";
-        echo "$__AF_create_livecd236_v0__37_13" > /dev/null 2>&1
+elif [ $([ "_${build_tag}" != "_iso" ]; echo $?) != 0 ]; then
+        create_iso__236_v0 "${distro_name}" "${distro_version}" "${arch}" "${sources}" "${base_type}" "${device}";
+        __AF_create_iso236_v0__37_13="$__AF_create_iso236_v0";
+        echo "$__AF_create_iso236_v0__37_13" > /dev/null 2>&1
 fi
 }
 __AMBER_VAL_20=$(pwd);

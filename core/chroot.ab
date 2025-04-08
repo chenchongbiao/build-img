@@ -29,6 +29,5 @@ pub fun umount_chroot(rootfs_path) {
 }
 
 pub fun run_command_in_chroot(rootfs_path, command) {
-    trust $export DEBIAN_FRONTEND=noninteractive && \
-    sudo chroot {rootfs_path} /usr/bin/env bash -e -o pipefail -c \"{command}\"$
+    trust $sudo env DEBIAN_FRONTEND=noninteractive chroot {rootfs_path} bash -c \"{command}\"$
 }

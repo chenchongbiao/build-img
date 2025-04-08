@@ -169,29 +169,29 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 run_command_in_chroot(get_tmp_path(), "apt update")
                 // debian dkms 加了 /etc/kernel 下的内容
                 trust $curl -L -o {get_tmp_path()}/tmp/dkms.deb https://mirrors.aliyun.com/debian/pool/main/d/dkms/dkms_3.0.10-8%2bdeb12u1_all.deb$
-                run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb")
+                run_command_in_chroot(get_tmp_path(), "apt reinstall -y --allow-downgrades /tmp/dkms.deb && rm /tmp/dkms.deb")
                 // 这里会 radxa-system-config-common 安装的 mimeapps.list 与 deepin-default-settings 中的冲突，这里使用 deepin 提供的，这里删除冲突文件重新压包
                 run_command_in_chroot(get_tmp_path(), "apt download --allow-unauthenticated radxa-system-config-common && \\
-                    dpkg-deb -R radxa-system-config-common*deb radxa-system-config-common  && \\
-                    rm radxa-system-config-commonrm/usr/share/applications/mimeapps.list && \\
+                    dpkg-deb -R radxa-system-config-common*deb radxa-system-config-common && \\
+                    rm radxa-system-config-common/usr/share/applications/mimeapps.list && \\
                     dpkg-deb -b radxa-system-config-common radxa-system-config-common.deb && \\
-                    apt install ./radxa-system-config-common.deb && \\
-                    rm radxa-system-config-common.deb")
+                    apt install /radxa-system-config-common.deb")
+                run_command_in_chroot(get_tmp_path(),  "rm -rf /radxa-system-config-common*")
 
                 run_command_in_chroot(get_tmp_path(), "apt install -y \\
                     radxa-bootutils radxa-firmware radxa-otgutils radxa-udev \\
                     rfkill mtd-utils \\
                     u-boot-tools efibootmgr systemd-boot apt-listchanges \\
                     pipewire-audio avahi-daemon")
-                run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
+                run_command_in_chroot(get_tmp_path(), "apt install -y rsetup-config-first-boot && dpkg --configure -a")
+                run_command_in_chroot(get_tmp_path(), "apt install -y radxa-system-config-kernel-cmdline-ttyfiq0 u-boot-rock-5b")
                 run_command_in_chroot(get_tmp_path(), "apt install -y task-rock-5b linux-headers-rock-5b linux-image-rock-5b")
-                run_command_in_chroot(get_tmp_path(), "dpkg --configure -a")
 
                 trust $sudo rm {get_tmp_path()}/etc/apt/apt.conf$
             }
 
             run_command_in_chroot(get_tmp_path(), "cd /usr/lib/u-boot/{device} && ./setup.sh update_bootloader {loop_device} rk3588")
-            run_command_in_chroot(get_tmp_path(), "u-boot-update")
+            // run_command_in_chroot(get_tmp_path(), "u-boot-update")
         }
         device == "rdk-x5" {
             // trust $sudo cp -r {device_config_path}/boot/* {get_tmp_path()}/boot 2>/dev/null$
@@ -209,8 +209,6 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
                 hobot-multimedia-dev hobot-multimedia-samples hobot-sp-samples \\
                 hobot-spdev hobot-wifi")
             run_command_in_chroot(get_tmp_path(), "rm /etc/apt/sources.list.d/rdk-x5.list")
-            // 安装相关的包后 lightdm 会被禁用，这里允许启动
-            run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
                 // hobot-utils
                 // tros-humble-clip-encode-text tros-humble-clip-msgs tros-humble-hobot-audio tros-humble-hobot-codec \\
                 // tros-humble-hobot-cv tros-humble-hobot-dosod tros-humble-hobot-falldown-detection \\
@@ -290,6 +288,8 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
         run_command_in_chroot(get_tmp_path(), "useradd  -s /bin/bash -m -g users deepin")
         run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
         run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
+        // 安装相关的包后 lightdm 会被禁用，这里允许启动
+        run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
     }
     run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
 
@@ -303,7 +303,7 @@ pub fun create_image(distro_name, distro_version, arch, sources, base_type, devi
     echo_success("output {image_path} success")
 }
 
-pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, device) {
+pub fun create_iso(distro_name, distro_version, arch, sources, base_type, device) {
     // 参考 https://www.cnblogs.com/searchstar/p/18437677
     umount_chroot(get_tmp_path())
     trust $sudo rm -rf {get_tmp_path()}/*$
@@ -358,16 +358,19 @@ pub fun create_livecd(distro_name, distro_version, arch, sources, base_type, dev
         echo_info("remove desktop from {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop")
         trust $sudo rm {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop$
         echo_info("remove org.deepin.browser.desktop from {get_tmp_path()}/etc/skel/Desktop")
+        // 删除给磐石准备的ostree初始化脚本
+        run_command_in_chroot(get_tmp_path(), "apt install -y deepin-installer")
+        run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/09_ostree_sys_init.job")
+        run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/10_ostree_persistent_init.job")
+
+        // 删除循环，不知道为啥，直接进入安装器的界面，会因为kwin合成器没有打开导致一直卡循环上。在试用模式选择安装器打开的能正常试用。
+        run_command_in_chroot(get_tmp_path(), "sed -i '43,46d' /usr/share/deepin-installer/tools/deepin-installer-core")
+
+        // 安装相关的包后 lightdm 会被禁用，这里允许启动
+        run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
     }
 
-    // 添加 deepin 用户
-    echo_info("add user")
-    run_command_in_chroot(get_tmp_path(), "useradd -s /bin/bash -m -g users deepin")
-    run_command_in_chroot(get_tmp_path(), "usermod -a -G sudo deepin")
-    run_command_in_chroot(get_tmp_path(), "echo deepin:deepin | chpasswd")
-
-    // 允许 root 远程登录
-    run_command_in_chroot(get_tmp_path(), "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config")
+    run_command_in_chroot(get_tmp_path(), "echo root:deepin | chpasswd")
 
     echo_info("set hostname")
     trust $echo \"deepin-{arch}\" | sudo tee {get_tmp_path()}/etc/hostname > /dev/null$
@@ -442,13 +445,15 @@ set timeout=30
 
 menuentry \"deepin Live [EFI/GRUB]\" \{
     insmod all_video
-    linux ($root)/live/vmlinuz boot=live
+    set gfxpayload=keep
+    linux ($root)/live/vmlinuz boot=live union=overlay locales=zh_CN.UTF-8 console=tty splash --
     initrd ($root)/live/initrd
 }
 
 menuentry \"deepin Live [EFI/GRUB] (nomodeset)\" \{
     insmod all_video
-    linux ($root)/live/vmlinuz boot=live nomodeset
+    set gfxpayload=keep
+    linux ($root)/live/vmlinuz boot=live union=overlay locales=zh_CN.UTF-8 console=tty splash -- nomodeset
     initrd ($root)/live/initrd
 }"
     // 其中insmod all_video可以解决no suitable video mode found的问题：https://lists.gnu.org/archive/html/help-grub/2018-01/msg00009.html
