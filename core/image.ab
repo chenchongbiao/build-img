@@ -331,6 +331,13 @@ pub fun create_iso(distro_name, distro_version, arch, sources, base_type, device
     // 提供init的
     run_command_in_chroot(get_tmp_path(), "apt install -y live-boot systemd-sysv")
 
+    // 安装额外软件包
+    let device_config_path = get_device_config_path(arch, device)
+    echo_info("copy extra packages to {get_tmp_path()}/tmp")
+    trust $cp -r {device_config_path}/extra-packages/* {get_tmp_path()}/tmp 2>/dev/null$
+    echo_info("installing extra packages from {get_tmp_path()}/tmp")
+    run_command_in_chroot(get_tmp_path(), "cd /tmp && apt install -y ./*deb 2>/dev/null")
+
     // 创建必要的目录, staging下面存放的就是用来制作ISO的文件。
     let staging = "{get_livecd_path()}/staging"
     trust $rm -rf {get_livecd_path()}$
@@ -358,13 +365,23 @@ pub fun create_iso(distro_name, distro_version, arch, sources, base_type, device
         echo_info("remove desktop from {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop")
         trust $sudo rm {get_tmp_path()}/etc/skel/Desktop/org.deepin.browser.desktop$
         echo_info("remove org.deepin.browser.desktop from {get_tmp_path()}/etc/skel/Desktop")
-        // 删除给磐石准备的ostree初始化脚本
-        run_command_in_chroot(get_tmp_path(), "apt install -y deepin-installer")
-        run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/09_ostree_sys_init.job")
-        run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/10_ostree_persistent_init.job")
+        // 删除给磐石准备的ostree相关脚本
+        // run_command_in_chroot(get_tmp_path(), "apt install -y deepin-installer")
+        // run_command_in_chroot(get_tmp_path(), "apt install -y deepin-installer=6.0.69 lightdm-gtk-greeter")
+        // run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/09_ostree_sys_init.job")
+        // run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/10_ostree_persistent_init.job")
+        // run_command_in_chroot(get_tmp_path(), "rm /usr/share/deepin-installer/tools/hooks/before_chroot/13_mount_persistent.job")
 
         // 删除循环，不知道为啥，直接进入安装器的界面，会因为kwin合成器没有打开导致一直卡循环上。在试用模式选择安装器打开的能正常试用。
-        run_command_in_chroot(get_tmp_path(), "sed -i '43,46d' /usr/share/deepin-installer/tools/deepin-installer-core")
+        // run_command_in_chroot(get_tmp_path(), "sed -i '43,47d' /usr/share/deepin-installer/tools/deepin-installer-core")
+
+        // run_command_in_chroot(get_tmp_path(), "sed -i '130,144d' /usr/share/deepin-installer/tools/functions/xrandr.sh")
+        // run_command_in_chroot(get_tmp_path(), "sed -i '130i\    echo 1' /usr/share/deepin-installer/tools/functions/xrandr.sh")
+
+        // trust $echo 'Acquire::https::Proxy \"http://localhost:7890\";' | sudo tee {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+        // trust $echo 'Acquire::http::Proxy \"http://localhost:7890\";' | sudo tee -a {get_tmp_path()}/etc/apt/apt.conf > /dev/null$
+        // trust $curl -L -o {get_tmp_path()}/tmp/deepin-camera.deb https://github.com/GXDE-OS/deepin-camera/releases/download/6.5.9/deepin-camera_6.5.9_amd64.deb$
+        // run_command_in_chroot(get_tmp_path(), "apt install -y /tmp/deepin-camera.deb && rm /tmp/deepin-camera.deb")
 
         // 安装相关的包后 lightdm 会被禁用，这里允许启动
         run_command_in_chroot(get_tmp_path(), "systemctl enable lightdm")
@@ -395,6 +412,8 @@ pub fun create_iso(distro_name, distro_version, arch, sources, base_type, device
     }
     // 清理 apt 缓存
     run_command_in_chroot(get_tmp_path(), "apt clean && rm -rf /var/cache/apt/archives/*")
+    run_command_in_chroot(get_tmp_path(), "rm /root/.bash_history")
+    run_command_in_chroot(get_tmp_path(), "rm -rf /var/log/*")
 
     umount_chroot(get_tmp_path())
 
@@ -402,8 +421,8 @@ pub fun create_iso(distro_name, distro_version, arch, sources, base_type, device
     // /boot目录排除了，这是因为系统启动的时候会先读取/boot下面的内核等，最后才挂载根文件系统，因此/boot目录不能放到根文件系统里，而是另外放。
     trust $sudo mksquashfs \\
     {get_tmp_path()} \\
-    {staging}/live/filesystem.squashfs \\
-    -e boot$
+    {staging}/live/filesystem.squashfs$
+    // -e boot$
 
     let isolinux_cfg = "{staging}/isolinux/isolinux.cfg"
     let text = "UI vesamenu.c32
@@ -455,7 +474,8 @@ menuentry \"deepin Live [EFI/GRUB] (nomodeset)\" \{
     set gfxpayload=keep
     linux ($root)/live/vmlinuz boot=live union=overlay locales=zh_CN.UTF-8 console=tty splash -- nomodeset
     initrd ($root)/live/initrd
-}"
+}
+"
     // 其中insmod all_video可以解决no suitable video mode found的问题：https://lists.gnu.org/archive/html/help-grub/2018-01/msg00009.html
     trust file_write(grub_cfg, text)
 
